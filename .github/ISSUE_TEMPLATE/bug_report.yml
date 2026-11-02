@@ -1,0 +1,45 @@
+name: Bug report
+description: Something in the SDK does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Do not include API keys or other secrets.
+        Security problems must be reported privately (see SECURITY.md).
+  - type: input
+    id: version
+    attributes:
+      label: SDK version
+      placeholder: e.g. 1.0.0
+    validations:
+      required: true
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: Runtime
+      options:
+        - Node.js
+        - Browser (bundle from CDN)
+        - Browser (via a bundler)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: runtime-version
+    attributes:
+      label: Runtime version
+      placeholder: e.g. Node.js 24.1.0, Chrome 140
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include the code you ran and the error or output, with `debug` logs if possible.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
