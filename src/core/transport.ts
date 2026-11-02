@@ -220,6 +220,20 @@ export class Transport {
     }
   }
 
+  /** The API marks copies served after a failed tibia.com read with `stale: true`. */
+  #observeBody(body: unknown, path: string): void {
+    if (typeof body !== "object" || body === null || (body as { stale?: unknown }).stale !== true) {
+      return;
+    }
+    const updatedAt = (body as { updated_at?: unknown }).updated_at;
+    const when = typeof updatedAt === "string" ? ` (updated at ${updatedAt})` : "";
+    this.#config.warnings.emit({
+      code: "STALE_DATA",
+      message: `The API served cached data for ${path}${when}.`,
+      details: { path, updatedAt },
+    });
+  }
+
   async #wait(ms: number, signal: AbortSignal | undefined): Promise<void> {
     try {
       await this.#deps.sleep(ms, signal);
@@ -348,6 +362,7 @@ export class Transport {
             retryAfter: undefined,
           });
         }
+        this.#observeBody(parsed, request.path);
         return {
           status: response.status,
           headers: responseHeaders,

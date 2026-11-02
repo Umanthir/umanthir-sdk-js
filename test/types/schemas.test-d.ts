@@ -1,12 +1,21 @@
 import { describe, expectTypeOf, it } from "vitest";
 import type {
+  AchievementList,
+  AchievementListOptions,
+  Bosses,
   Character,
   CharacterInfo,
+  CreatureListOptions,
+  Creatures,
   Death,
   ErrorBody,
+  ExperienceTable,
   HighscoreCategory,
   HighscorePage,
+  MapList,
   OnlineBatch,
+  SpellList,
+  WorldQuestList,
 } from "../../src/index.js";
 
 describe("public schema types", () => {
@@ -92,5 +101,27 @@ describe("Community method types", () => {
     type HO = import("../../src/index.js").HouseListOptions;
     expectTypeOf<{ state: "rented"; type: "houses"; order: "rent" }>().toExtend<HO>();
     expectTypeOf<{ order: "price" }>().not.toExtend<HO>();
+  });
+});
+
+describe("Library method types", () => {
+  it("return the contract schemas", async () => {
+    const { Umanthir } = await import("../../src/index.js");
+    type M = typeof import("../../src/index.js");
+    const c = new Umanthir();
+    expectTypeOf(c.library.achievements).returns.toEqualTypeOf<Promise<AchievementList>>();
+    expectTypeOf(c.library.boostableBosses).returns.toEqualTypeOf<Promise<Bosses>>();
+    expectTypeOf(c.library.creatures).returns.toEqualTypeOf<Promise<Creatures>>();
+    expectTypeOf(c.library.experienceTable).returns.toEqualTypeOf<Promise<ExperienceTable>>();
+    expectTypeOf(c.library.maps).returns.toEqualTypeOf<Promise<MapList>>();
+    expectTypeOf(c.library.spells).returns.toEqualTypeOf<Promise<SpellList>>();
+    expectTypeOf(c.library.worldQuests).returns.toEqualTypeOf<Promise<WorldQuestList>>();
+    expectTypeOf<M>().not.toBeAny();
+  });
+
+  it("filters use the contract parameter types", () => {
+    expectTypeOf<{ grade: number }>().toExtend<AchievementListOptions>();
+    expectTypeOf<{ grade: string }>().not.toExtend<AchievementListOptions>();
+    expectTypeOf<{ creature_race: number }>().not.toExtend<CreatureListOptions>();
   });
 });

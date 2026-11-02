@@ -36,3 +36,21 @@ export function positiveInt(label: string, value: unknown, min = 1): number {
   }
   return value;
 }
+
+/** Validates free text sent in a query string (encoded by URLSearchParams). */
+export function queryText(label: string, value: unknown, max = 100): string {
+  if (typeof value !== "string") throw new ValidationError(`${label} must be a string.`);
+  const normalized = value.replace(NBSP, " ").trim();
+  if (normalized === "") throw new ValidationError(`${label} must not be empty.`);
+  if (normalized.length > max) throw new ValidationError(`${label} is too long.`);
+  if (CONTROL.test(normalized)) throw new ValidationError(`${label} contains control characters.`);
+  return normalized;
+}
+
+/** Validates an integer within [min, max]. */
+export function intInRange(label: string, value: unknown, min: number, max: number): number {
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < min || value > max) {
+    throw new ValidationError(`${label} must be an integer between ${min} and ${max}.`);
+  }
+  return value;
+}
