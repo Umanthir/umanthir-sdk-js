@@ -11,6 +11,10 @@ const CONTROL = /[\u0000-\u001f\u007f]/;
 export interface NameOptions {
   /** Also reject `%` (guilds, towns, houses). */
   strict?: boolean;
+  /** Accept any printable character (still encoded in the URL). */
+  anyText?: boolean;
+  /** Maximum length. Default: 100. */
+  max?: number;
 }
 
 /** Validates a name used in a URL path and returns it normalized (NBSP → space, trimmed). */
@@ -18,8 +22,9 @@ export function pathName(label: string, value: unknown, options: NameOptions = {
   if (typeof value !== "string") throw new ValidationError(`${label} must be a string.`);
   const normalized = value.replace(NBSP, " ").trim();
   if (normalized === "") throw new ValidationError(`${label} must not be empty.`);
-  if (normalized.length > 100) throw new ValidationError(`${label} is too long.`);
+  if (normalized.length > (options.max ?? 100)) throw new ValidationError(`${label} is too long.`);
   if (CONTROL.test(normalized)) throw new ValidationError(`${label} contains control characters.`);
+  if (options.anyText) return normalized;
   const forbidden = options.strict ? STRICT_FORBIDDEN : NAME_FORBIDDEN;
   if (forbidden.test(normalized)) {
     throw new ValidationError(

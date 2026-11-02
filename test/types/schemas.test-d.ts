@@ -17,9 +17,13 @@ import type {
   MapList,
   Online,
   OnlineBatch,
+  RashidLocation,
   ShareExperience,
   SpellList,
   VocationStatus,
+  WikiCategoryList,
+  WikiItem,
+  WikiItemList,
   WorldQuestList,
 } from "../../src/index.js";
 
@@ -157,5 +161,16 @@ describe("Tools method types", () => {
     expectTypeOf<{ level: 1 }>().toExtend<ExperienceGoalFrom>();
     expectTypeOf<{ experience: 1n }>().toExtend<ExperienceGoalFrom>();
     expectTypeOf<{ level: 1; experience: 1 }>().not.toExtend<ExperienceGoalFrom>();
+  });
+});
+
+describe("Wiki method types", () => {
+  it("return the contract schemas", async () => {
+    const { Umanthir } = await import("../../src/index.js");
+    const c = new Umanthir();
+    expectTypeOf(c.wiki.rashidLocation).returns.toEqualTypeOf<Promise<RashidLocation>>();
+    expectTypeOf(c.wiki.categories).returns.toEqualTypeOf<Promise<WikiCategoryList>>();
+    expectTypeOf(c.wiki.list).returns.toEqualTypeOf<Promise<WikiItemList>>();
+    expectTypeOf(c.wiki.get).returns.toEqualTypeOf<Promise<WikiItem>>();
   });
 });

@@ -51,4 +51,5 @@ export type {
   RawSkillsOptions,
   ToolsResource,
 } from "./resources/tools.js";
+export type { WikiResource } from "./resources/wiki.js";
 export { VERSION } from "./version.js";
