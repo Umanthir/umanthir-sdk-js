@@ -28,3 +28,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Library resources: `library.achievements({ grade })`, `library.boostableBosses()`,
   `library.creatures({ creature_race })`, `library.experienceTable()`, `library.maps({ region })`,
   `library.spells({ spell })` and `library.worldQuests({ worldquest })`.
+- Tools resources: `online.list(worlds, { fields, ifNoneMatch })` (ETag, `notModified` on 304,
+  warnings for stale, failed and unknown worlds), `online.character(name)`,
+  `tools.shareExperience(levels)`, `tools.vocationStatus(vocation, level)`, `tools.rawSkills(params)`,
+  `tools.exerciseWeapons(charges)`, `tools.experienceForLevel(level)`,
+  `tools.levelForExperience(experience)` (number or bigint), `tools.experienceGoal(target, from)`
+  and `tools.splitHunt(text)` (sent once as `text/plain`, never logged).

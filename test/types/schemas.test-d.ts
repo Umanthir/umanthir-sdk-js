@@ -2,6 +2,7 @@ import { describe, expectTypeOf, it } from "vitest";
 import type {
   AchievementList,
   AchievementListOptions,
+  BaseVocation,
   Bosses,
   Character,
   CharacterInfo,
@@ -9,12 +10,16 @@ import type {
   Creatures,
   Death,
   ErrorBody,
+  ExperienceGoalFrom,
   ExperienceTable,
   HighscoreCategory,
   HighscorePage,
   MapList,
+  Online,
   OnlineBatch,
+  ShareExperience,
   SpellList,
+  VocationStatus,
   WorldQuestList,
 } from "../../src/index.js";
 
@@ -123,5 +128,34 @@ describe("Library method types", () => {
     expectTypeOf<{ grade: number }>().toExtend<AchievementListOptions>();
     expectTypeOf<{ grade: string }>().not.toExtend<AchievementListOptions>();
     expectTypeOf<{ creature_race: number }>().not.toExtend<CreatureListOptions>();
+  });
+});
+
+describe("Tools method types", () => {
+  it("return the contract schemas", async () => {
+    const { Umanthir } = await import("../../src/index.js");
+    type I = typeof import("../../src/index.js");
+    const c = new Umanthir();
+    expectTypeOf(c.online.character).returns.toEqualTypeOf<Promise<Online>>();
+    expectTypeOf(c.tools.shareExperience).returns.toEqualTypeOf<Promise<ShareExperience>>();
+    expectTypeOf(c.tools.vocationStatus).returns.toEqualTypeOf<Promise<VocationStatus>>();
+    expectTypeOf(c.tools.splitHunt).parameter(0).toEqualTypeOf<string>();
+    expectTypeOf(c.tools.levelForExperience).parameter(0).toEqualTypeOf<number | bigint>();
+    expectTypeOf<I>().not.toBeAny();
+  });
+
+  it("online.list narrows on notModified", async () => {
+    const { Umanthir } = await import("../../src/index.js");
+    const res = await new Umanthir().online.list(["Antica"]);
+    if (!res.notModified) expectTypeOf(res.data).toEqualTypeOf<OnlineBatch>();
+    else expectTypeOf(res.data).toEqualTypeOf<undefined>();
+  });
+
+  it("vocation and goal inputs are constrained", () => {
+    expectTypeOf<"monk">().toExtend<BaseVocation>();
+    expectTypeOf<"elite knight">().not.toExtend<BaseVocation>();
+    expectTypeOf<{ level: 1 }>().toExtend<ExperienceGoalFrom>();
+    expectTypeOf<{ experience: 1n }>().toExtend<ExperienceGoalFrom>();
+    expectTypeOf<{ level: 1; experience: 1 }>().not.toExtend<ExperienceGoalFrom>();
   });
 });

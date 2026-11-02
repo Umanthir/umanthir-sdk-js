@@ -42,4 +42,13 @@ export type {
   SpellListOptions,
   WorldQuestListOptions,
 } from "./resources/library.js";
+export type {
+  BaseVocation,
+  ExperienceGoalFrom,
+  OnlineListOptions,
+  OnlineListResult,
+  OnlineResource,
+  RawSkillsOptions,
+  ToolsResource,
+} from "./resources/tools.js";
 export { VERSION } from "./version.js";
