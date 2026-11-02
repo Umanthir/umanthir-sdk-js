@@ -1,4 +1,11 @@
-import type { QueryValue, RequestOptions, Transport } from "../core/transport.js";
+import type {
+  QueryValue,
+  RequestOptions,
+  Transport,
+  TransportRequest,
+  TransportResponse,
+} from "../core/transport.js";
+import type { UmanthirWarning } from "../core/warnings.js";
 
 /** Shared plumbing of the API resources. */
 export abstract class Resource {
@@ -20,6 +27,15 @@ export abstract class Resource {
         : { method: "GET", path, options, query },
     );
     return response.data as T;
+  }
+
+  /** Full request, for routes that need status or headers (e.g. 304 with ETag). */
+  protected send<T>(request: TransportRequest): Promise<TransportResponse<T>> {
+    return this.#transport.request<T>(request);
+  }
+
+  protected warn(warning: UmanthirWarning): void {
+    this.#transport.warn(warning);
   }
 }
 

@@ -28,6 +28,7 @@ import {
   WorldsResource,
 } from "./resources/community.js";
 import { LibraryResource } from "./resources/library.js";
+import { OnlineResource, ToolsResource } from "./resources/tools.js";
 import { VERSION } from "./version.js";
 
 /** Default address of the Umanthir API. */
@@ -156,6 +157,10 @@ export class Umanthir {
   public readonly houses: HousesResource;
   /** Library: achievements, bosses, creatures, experience table, maps, spells and world quests. */
   public readonly library: LibraryResource;
+  /** Who is online: several worlds in one call, or one character. */
+  public readonly online: OnlineResource;
+  /** Calculators: experience, vocations, skills, exercise weapons and party hunts. */
+  public readonly tools: ToolsResource;
 
   readonly #hasApiKey: boolean;
   readonly #timeout: number;
@@ -227,6 +232,8 @@ export class Umanthir {
     this.polls = new PollsResource(transport);
     this.houses = new HousesResource(transport);
     this.library = new LibraryResource(transport);
+    this.online = new OnlineResource(transport);
+    this.tools = new ToolsResource(transport);
   }
 
   /** Safe summary of the configuration; the API key is never included. */

@@ -17,7 +17,7 @@ import {
   parseRetryAfter,
   RETRYABLE_STATUS,
 } from "./retry.js";
-import type { WarningEmitter } from "./warnings.js";
+import type { UmanthirWarning, WarningEmitter } from "./warnings.js";
 
 /** Options accepted by every SDK method, overriding the client defaults for one call. */
 export interface RequestOptions {
@@ -55,6 +55,8 @@ export interface TransportRequest {
   path: string;
   query?: Readonly<Record<string, QueryValue>>;
   body?: unknown;
+  /** Plain text body (sent as `text/plain; charset=utf-8`); excludes `body`. */
+  text?: string;
   /** Extra request headers (internal use, e.g. `If-None-Match`). */
   headers?: Readonly<Record<string, string>>;
   options?: RequestOptions | undefined;
@@ -170,6 +172,7 @@ export class Transport {
   #headers(request: TransportRequest): Record<string, string> {
     const headers: Record<string, string> = { Accept: "application/json" };
     if (request.body !== undefined) headers["Content-Type"] = "application/json";
+    else if (request.text !== undefined) headers["Content-Type"] = "text/plain; charset=utf-8";
     if (this.#config.apiKey !== undefined)
       headers["Authorization"] = `Bearer ${this.#config.apiKey}`;
     if (this.#config.userAgent !== undefined) headers["User-Agent"] = this.#config.userAgent;
@@ -220,6 +223,11 @@ export class Transport {
     }
   }
 
+  /** Emits a warning through the client's logger and `onWarning`. */
+  public warn(warning: UmanthirWarning): void {
+    this.#config.warnings.emit(warning);
+  }
+
   /** The API marks copies served after a failed tibia.com read with `stale: true`. */
   #observeBody(body: unknown, path: string): void {
     if (typeof body !== "object" || body === null || (body as { stale?: unknown }).stale !== true) {
@@ -257,7 +265,7 @@ export class Transport {
     const url = this.buildURL(request.path, request.query);
     const href = url.href;
     const headers = this.#headers(request);
-    const body = request.body === undefined ? undefined : JSON.stringify(request.body);
+    const body = request.body === undefined ? request.text : JSON.stringify(request.body);
     const canRetry = IDEMPOTENT_METHODS.has(request.method);
 
     for (let attempt = 1; ; attempt++) {
