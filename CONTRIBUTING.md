@@ -4,7 +4,8 @@ Thanks for your interest in improving the Umanthir SDK.
 
 ## Ground rules
 
-- Be respectful and constructive.
+- Be respectful and constructive. Everyone taking part follows our
+  [Code of Conduct](./CODE_OF_CONDUCT.md).
 - Security issues are reported privately (see [SECURITY.md](./SECURITY.md)), never in issues or pull requests.
 - The published package has **no runtime dependencies**. New development dependencies need a clear
   justification in the pull request.
