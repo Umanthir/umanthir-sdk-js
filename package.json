@@ -57,9 +57,13 @@
     "test:watch": "vitest",
     "test:dist": "vitest run --config vitest.dist.config.ts",
     "check:package": "publint --strict && attw --pack . --profile node16",
-    "verify": "npm run check:forbidden && npm run lint && npm run typecheck && npm run test && npm run build && npm run test:dist && npm run check:package && npm run size",
+    "verify": "npm run check:forbidden && npm run lint && npm run typecheck && npm run test && npm run test:types && npm run build && npm run test:dist && npm run check:package && npm run size",
     "size": "size-limit",
-    "check:forbidden": "sh scripts/check-forbidden-files.sh"
+    "check:forbidden": "sh scripts/check-forbidden-files.sh",
+    "contract:sync": "node scripts/contract.mjs sync",
+    "contract:generate": "node scripts/contract.mjs generate",
+    "contract:check": "node scripts/contract.mjs generate && git diff --exit-code -- src/generated openapi && test -z \"$(git ls-files --others --exclude-standard -- src/generated openapi)\"",
+    "test:types": "vitest run --config vitest.types.config.ts"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "0.18.5",

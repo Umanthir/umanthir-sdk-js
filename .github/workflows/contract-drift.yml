@@ -1,0 +1,45 @@
+name: API contract drift
+
+on:
+  schedule:
+    - cron: "23 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    name: Compare published contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Compare versions and open an issue when they differ
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -eu
+          snapshot=$(ls openapi | sed -n 's/^umanthir-api\.\([0-9]*\.[0-9]*\.[0-9]*\)\.en\.yaml$/\1/p')
+          published=$(curl -fsS --proto '=https' --max-time 30 --max-filesize 5242880 \
+            https://api.umanthir.com/v2/docs/openapi.en.yaml \
+            | awk '/^info:/{i=1;next} i&&/^[^ ]/{exit} i&&/^  version:/{gsub(/[\047"]/,"",$2);print $2;exit}')
+          echo "snapshot=$snapshot published=$published"
+          if ! printf '%s' "$published" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Could not read info.version from the published contract"; exit 1
+          fi
+          if [ "$snapshot" = "$published" ]; then echo "Contract is up to date."; exit 0; fi
+          title="API contract $published available (SDK uses $snapshot)"
+          if gh issue list --repo "$REPO" --state open --search "\"$title\" in:title" --json number --jq 'length' | grep -qv '^0$'; then
+            echo "Issue already open."; exit 0
+          fi
+          gh issue create --repo "$REPO" --title "$title" --label contract \
+            --body "The published Umanthir API contract is \`$published\`; the SDK types were generated from \`$snapshot\`. Run \`npm run contract:sync\` in a feature branch and adapt the resources and tests." \
+            || gh issue create --repo "$REPO" --title "$title" \
+            --body "The published Umanthir API contract is \`$published\`; the SDK types were generated from \`$snapshot\`. Run \`npm run contract:sync\` in a feature branch and adapt the resources and tests."

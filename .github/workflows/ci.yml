@@ -40,9 +40,16 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Verify registry signatures and attestations
         run: npm audit signatures
+      - name: Install contract generator (no install scripts)
+        run: npm ci --prefix tools/contract --ignore-scripts
+      - name: Verify contract generator signatures
+        run: npm audit signatures --prefix tools/contract
+      - name: Generated types match the contract snapshot
+        run: npm run contract:check
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+      - run: npm run test:types
       - run: npm run build
       - run: npm run test:dist
       - run: npm run check:package

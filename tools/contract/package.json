@@ -1,0 +1,10 @@
+{
+  "name": "@umanthir/sdk-contract-tools",
+  "private": true,
+  "description": "Isolated generator of the SDK types from the Umanthir API OpenAPI contract. Not published.",
+  "type": "module",
+  "devDependencies": {
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3"
+  }
+}
