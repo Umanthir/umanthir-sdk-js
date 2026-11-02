@@ -21,3 +21,8 @@ jobs:
           fail-on-severity: moderate
           deny-licenses: AGPL-1.0-only, AGPL-3.0-only, AGPL-3.0-or-later, GPL-2.0-only, GPL-3.0-only, GPL-3.0-or-later, SSPL-1.0
           comment-summary-in-pr: never
+          # GHSA-g3hv-75wg-m249 (minimatch < 11.0.1, moderate DoS through glob patterns) reaches
+          # only the development-time contract generator in tools/contract, via
+          # openapi-typescript -> @redocly/openapi-core, which runs on our own local OpenAPI file.
+          # No compatible fix exists yet. Remove this exception once the generator upgrades.
+          allow-ghsas: GHSA-g3hv-75wg-m249

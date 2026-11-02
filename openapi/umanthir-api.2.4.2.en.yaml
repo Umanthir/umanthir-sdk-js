@@ -1,0 +1,4307 @@
+openapi: 3.0.3
+info:
+  title: Umanthir API
+  version: 2.4.2
+  description: |
+    Umanthir API v2. Reads public pages from tibia.com and returns JSON.
+
+    The `/tibia` segment does not exist in this version.
+    A missing character responds 404. An upstream failure responds 502 or 520, with the
+    standard error body and no raw HTML.
+
+    CET/CEST dates are returned as ISO-8601 UTC, with the fixed time zone Europe/Berlin.
+    NBSP (U+00A0) becomes a space before names are compared and URLs are built.
+
+    The interactive page is at `GET /v2/docs/en` (English, the default for `GET /v2/docs`)
+    and at `GET /v2/docs/pt-BR` (Brazilian Portuguese).
+    When tibia.com goes into maintenance, it redirects everything to maintenance.tibia.com. The API
+    recognises it, answers 503 `Tibia.com is under maintenance.` with `Retry-After`, and stops calling
+    tibia.com for 5 minutes; after that, one probe at a time checks whether it is back.
+
+    Any website may call the API from the browser (CORS `Access-Control-Allow-Origin: *`).
+    The preflight `OPTIONS` answers 204 and allows `Authorization`, `Content-Type` and
+    `If-None-Match`; it does not count against the rate limit. No cookies are used.
+servers:
+  - url: http://127.0.0.1:8081
+    description: Local process. The binary's default port is 8080; the Postman collection uses 8081.
+  - url: https://api.umanthir.com
+    description: Public host. The certificate is served with the full chain.
+tags:
+  - name: Community
+    x-displayName: Community
+  - name: Library
+    x-displayName: Library
+  - name: Tools
+    x-displayName: Tools
+  - name: Wiki
+    x-displayName: Wiki
+  - name: Docs
+    x-displayName: Docs
+paths:
+  /v2/community/characters/{name}:
+    get:
+      tags: [Community]
+      operationId: getCharacter
+      summary: Character profile
+      parameters:
+        - $ref: '#/components/parameters/CharacterName'
+      responses:
+        '200':
+          description: Profile. `deaths` is always present, empty when there are no deaths.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Character'
+              example:
+                character_information:
+                  name: Njorn
+                  level: 35
+                  share_experience: {min: 23, max: 52}
+                  vocation: Master Sorcerer
+                  world: Antica
+                  former_worlds: [Lobera, Antica]
+                deaths: []
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Character not found.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: Could not find character.}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/community/highscores:
+    get:
+      tags: [Community]
+      operationId: getHighscores
+      summary: One highscores page
+      description: |
+        Reads only `table.TableContent` from the official page. `world` goes into the Tibia URL
+        with a capital first letter (`antica` becomes `Antica`). The `name` query does not filter this list.
+        A page past the last one, or above 20, responds 404.
+      parameters:
+        - $ref: '#/components/parameters/World'
+        - $ref: '#/components/parameters/HighscoreCategory'
+        - $ref: '#/components/parameters/Vocation'
+        - $ref: '#/components/parameters/Protection'
+        - $ref: '#/components/parameters/WorldTypes'
+        - $ref: '#/components/parameters/WorldTypesBracket'
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: Ranking page.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HighscorePage'
+              example:
+                highscores:
+                  page: 1
+                  last_update: '2026-10-13T13:30:00Z'
+                  category: experience
+                  rank_list_size: 1
+                  world: Antica
+                  rank_list:
+                    - {rank: 1, name: Alpha, vocation: Elite Knight, world: Antica, level: 100, value: 1000}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Page without a ranking, or a page past the last one.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: Highscores' data not found!}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/community/highscores/character/{name}:
+    get:
+      tags: [Community]
+      operationId: getCharacterHighscore
+      summary: A character's position in the top 1000
+      description: |
+        Accepts the same filters as the list. An empty `category` means `experience`.
+        The client's `page` is not used: the search walks up to 20 pages of the filtered ranking.
+        Outside the top 1000 responds 404. An unknown filter responds 400.
+        The response stays `{ rank, level, value }`.
+      parameters:
+        - $ref: '#/components/parameters/CharacterName'
+        - $ref: '#/components/parameters/World'
+        - $ref: '#/components/parameters/HighscoreCategory'
+        - $ref: '#/components/parameters/Vocation'
+        - $ref: '#/components/parameters/Protection'
+        - $ref: '#/components/parameters/WorldTypes'
+        - $ref: '#/components/parameters/WorldTypesBracket'
+      responses:
+        '200':
+          description: Position found.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RankHit'
+              example: {rank: 12, level: 800, value: 123456}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Character outside the top 1000, or an invalid name in the scrape.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: Could not find character.}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/community/worlds:
+    get:
+      tags: [Community]
+      operationId: getWorlds
+      summary: List of worlds, or the details of one world
+      parameters:
+        - $ref: '#/components/parameters/World'
+      responses:
+        '200':
+          description: Without `world`, the list. With `world`, the details and who is online.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/WorldList'
+                  - $ref: '#/components/schemas/WorldDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: List or world without data.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: Worlds' data not found!}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/community/drome/rotations:
+    get:
+      tags: [Community]
+      operationId: getDromeRotations
+      summary: Current rotation and the previous one
+      responses:
+        '200':
+          description: The open rotation and the one that closed.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rotations'
+        '404':
+          description: Rotation select missing.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: Drome Rotation's data not found!}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/community/drome/rotations/{world}:
+    get:
+      tags: [Community]
+      operationId: getDromeWorld
+      summary: Drome ranking of a world, page 1
+      parameters:
+        - $ref: '#/components/parameters/WorldPath'
+      responses:
+        '200':
+          description: First page of the ranking.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DromeRank'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Ranking missing.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: Drome Rotation's data not found!}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/community/drome/rotations/{world}/{page}:
+    get:
+      tags: [Community]
+      operationId: getDromeWorldPage
+      summary: Drome ranking of a world on one page
+      parameters:
+        - $ref: '#/components/parameters/WorldPath'
+        - $ref: '#/components/parameters/PagePath'
+      responses:
+        '200':
+          description: Requested page of the ranking.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DromeRank'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Ranking missing.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: Drome Rotation's data not found!}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/community/killstatistics/{world}:
+    get:
+      tags: [Community]
+      operationId: getKillStatistics
+      summary: Kill statistics of a world
+      description: |
+        Reads the world kill statistics: one row per race, in page order, with the last day
+        (`last_day`) and the last week (`last_week`). `killed_players` is how many players the race killed;
+        `killed_by_players` is how many of the race players killed. The page Total row comes out in `total`,
+        apart from `entries`.
+
+        tibia.com matches the world case-sensitively and answers a wrong name with the bare selector. That is
+        why the world goes out with a capital first letter (`antica` becomes `Antica`), and the page only
+        counts when the selector shows that world as chosen. The source URL only receives `subtopic` and the escaped world.
+      parameters:
+        - $ref: '#/components/parameters/WorldPath'
+      responses:
+        '200':
+          description: Rows per race and the world total.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KillStatistics'
+              example:
+                world: Antica
+                count: 2
+                entries:
+                  - race: (elemental forces)
+                    last_day: {killed_players: 15, killed_by_players: 0}
+                    last_week: {killed_players: 105, killed_by_players: 0}
+                  - race: Abyssador
+                    last_day: {killed_players: 0, killed_by_players: 2}
+                    last_week: {killed_players: 0, killed_by_players: 15}
+                total:
+                  last_day: {killed_players: 15, killed_by_players: 2}
+                  last_week: {killed_players: 105, killed_by_players: 15}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Unknown world (the selector does not show the requested world), page without the Total row, or an invalid number in a row.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: Kill Statistics data not found!}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/community/fansites:
+    get:
+      tags: [Community]
+      operationId: getFansites
+      summary: "Official Tibia fansites"
+      description: |
+        Reads the fansites promoted and supported by CipSoft, split as on the page: `promoted` and `supported`.
+        Each fansite carries name, link, logo, contact character, the content types and the social media (the
+        labels of the page icons; the social media carry no link), the language codes, the specials and the image
+        of the fansite item, when there is one. The source URL takes no parameter from the client.
+
+        The page changes rarely, so the API reads it once a day, at 10:10 Berlin time (after the server save),
+        and when the service starts, and answers from memory. `updated_at` tells when the list was read. If the
+        daily read fails, the last good list stays valid and a new attempt runs every 15 minutes.
+        `Cache-Control` lasts until the next refresh.
+      responses:
+        '200':
+          description: "Promoted and supported fansites."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fansites'
+              example:
+                count: 1
+                updated_at: '2026-10-22T08:10:02Z'
+                stale: false
+                promoted:
+                  - name: 'GuildStats.eu'
+                    url: 'https://guildstats.eu/'
+                    logo: 'https://static.tibia.com/images/community/fansitelogos/GuildStats.eu.gif'
+                    contact: 'Sir Dzidek'
+                    content: [Statistics, Texts, Tools]
+                    social_media: []
+                    languages: [en, es, nl, pl, pt]
+                    specials: ['Stats for chars, guilds, worlds and bosses.', 'Calculators.']
+                    item: 'https://static.tibia.com/images/community/fansiteitems/GuildStats.eu.gif'
+                supported: []
+        '404':
+          description: "Page without the two tables, or without any valid fansite."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: 'Fansites data not found!'}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/community/guilds/{world}:
+    get:
+      tags: [Community]
+      operationId: getGuilds
+      summary: "Guilds of a world"
+      description: |
+        Reads the guild list of the world, split as on the page: `active` (active guilds) and `in_formation`
+        (guilds in course of formation). Each guild carries `name`, `logo` and `description`, when the page has one.
+        tibia.com matches the world case-sensitively and answers a wrong name with the bare selector; the world
+        goes out with a capital first letter, and the page only counts when the selector shows that world as chosen.
+      parameters:
+        - $ref: '#/components/parameters/WorldPath'
+      responses:
+        '200':
+          description: "Active and in-formation guilds of the world."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuildList'
+              example:
+                world: Antica
+                count: 2
+                active:
+                  - name: Abeyance
+                    logo: https://static.tibia.com/images/guildlogos/Abeyance.gif
+                    description: Abeyance is a Sorcerer-only guild recruiting players level 50 and above.
+                in_formation:
+                  - name: Campisha
+                    logo: https://static.tibia.com/images/community/default_logo.gif
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/GuildsNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/community/guild/{name}:
+    get:
+      tags: [Community]
+      operationId: getGuild
+      summary: "Details of a guild"
+      description: |
+        Reads the guild page by name, case-insensitive and without a world (the name is unique in Tibia).
+        The information block becomes fields: `description`, `homepage`, `founded` and `world`, `status` and
+        `status_text`, `applications_open`, `disband` (disband warning) and `guildhall`. A sentence the parser
+        does not know, such as a war, goes into `other` instead of being lost. `members` carries every member; the
+        page's blank rank repeats the rank above. `title` comes from the text in parentheses after the name.
+      parameters:
+        - $ref: '#/components/parameters/GuildName'
+      responses:
+        '200':
+          description: "Guild details."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuildDetail'
+              example:
+                name: Alanui Institute
+                world: Antica
+                logo: https://static.tibia.com/images/guildlogos/Alanui_Institute.gif
+                description: Founded in 2018, The Alanui Institute mobilizes resources and tools for ideas and actions that transform Tibia.
+                founded: '2018-01-16'
+                status: active
+                status_text: It is currently active.
+                applications_open: true
+                guildhall: {name: Thais Clanhall, world: Antica, paid_until: '2026-11-16'}
+                members_count: 2
+                online_count: 0
+                members:
+                  - {rank: Headquarters, name: Alanui Residence, vocation: Royal Paladin, level: 139, joined: '2018-01-16', online: false}
+                  - {rank: Director, name: Integra Fairbrook Wingate, title: Galadriel, vocation: Elder Druid, level: 156, joined: '2018-02-18', online: false}
+                invited: []
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/GuildsNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/community/polls:
+    get:
+      tags: [Community]
+      operationId: getPolls
+      summary: "Tibia polls (public list)"
+      description: |
+        Reads the public poll list: the active polls (repeated on every page) and one page of the closed polls,
+        with `total` and `total_pages`. Each poll carries `id` (the tibia.com questionaireid), `topic` and the date.
+        The options and results of a poll need a tibia.com login and stay out.
+
+        tibia.com answers a page past the last with the last page itself. That is why the page shown has to be
+        the page asked for; otherwise it responds 404.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: "Active polls and one page of the closed polls."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Polls'
+              example:
+                active:
+                  - {id: 1439, topic: 'Ready for some pumpkin pie?', ends_on: '2026-10-30'}
+                closed:
+                  page: 1
+                  total_pages: 21
+                  total: 1004
+                  polls:
+                    - {id: 1437, topic: 'Have you ever met Orshabaal?', ended_on: '2026-10-23'}
+                    - {id: 1427, topic: 'Bakragore - ever faced this one?', ended_on: '2026-10-16'}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: "Page past the last, or page out of the expected format."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: Polls data not found!}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/community/houses/{world}/{town}:
+    get:
+      tags: [Community]
+      operationId: getHouses
+      summary: Houses or guildhalls of a town
+      description: |
+        Reads the house search of the world and town, with the form filters. Each row carries `house_id`,
+        `name`, `size` (square meters), `rent` (gold; `50k` becomes 50000 and `1kk` becomes 1000000) and `status`.
+        In an auction, `auction` carries `current_bid` (null before the first bid) and `time_left`, as the page writes it.
+
+        tibia.com matches the world and town case-sensitively and answers a wrong name with the bare form.
+        That is why the world goes out with a capital first letter, and the town goes out as the form spells it
+        when it is a known one (case-insensitive). A new town also works: each word gets a capital first letter,
+        and the page caption has to name that world and town; otherwise it responds 404.
+      parameters:
+        - $ref: '#/components/parameters/WorldPath'
+        - $ref: '#/components/parameters/HouseTown'
+        - $ref: '#/components/parameters/HouseState'
+        - $ref: '#/components/parameters/HouseType'
+        - $ref: '#/components/parameters/HouseOrder'
+      responses:
+        '200':
+          description: Search rows. Empty list when the page says no houses were found.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HouseList'
+              example:
+                world: Antica
+                town: Thais
+                type: houses
+                count: 3
+                houses:
+                  - {house_id: 10301, name: 'Alai Flats, Flat 01', size: 17, rent: 50000, status: rented}
+                  - {house_id: 10302, name: 'Alai Flats, Flat 02', size: 17, rent: 50000, status: auctioned, auction: {current_bid: null}}
+                  - {house_id: 10303, name: 'Alai Flats, Flat 03', size: 17, rent: 50000, status: auctioned, auction: {current_bid: 0, time_left: 4 days}}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/HousesNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/community/houses/{world}/house/{house_id}:
+    get:
+      tags: [Community]
+      operationId: getHouse
+      summary: Details of a house or guildhall
+      description: |
+        Reads the house page: name, type, image, beds, vocation restriction, size and rent. `status.text`
+        always carries the whole status paragraph. When it is a known one, `status.state` and the structured
+        fields come too: `rental` (owner and until when the rent is paid) or `auction` (end, highest bid and
+        bidder, or empty without a bid). Moving out and transfers have no real sample yet: they come only in
+        `status.text`, without `state`. CET/CEST dates come out as ISO-8601 UTC.
+      parameters:
+        - $ref: '#/components/parameters/WorldPath'
+        - $ref: '#/components/parameters/HouseID'
+      responses:
+        '200':
+          description: House details.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HouseDetail'
+              examples:
+                rented:
+                  summary: Rented house, with a vocation restriction
+                  value:
+                    house_id: 10505
+                    world: Antica
+                    name: Sorcerer's Avenue Labs 2a
+                    type: house
+                    image: https://static.tibia.com/images/houses/house_10505.png
+                    beds: 2
+                    restriction: Only Sorcerers can enter.
+                    size: 29
+                    rent: 50000
+                    status:
+                      state: rented
+                      text: The house has been rented by Integra Fairbrook Wingate. She has paid the rent until Nov 06 2026, 09:05:43 CET.
+                      rental: {owner: Integra Fairbrook Wingate, paid_until: '2026-11-06T08:05:43Z'}
+                auctioned:
+                  summary: House on auction, with a bid
+                  value:
+                    house_id: 10504
+                    world: Zunera
+                    name: Sorcerer's Avenue 5 (Shop)
+                    type: house
+                    image: https://static.tibia.com/images/houses/house_10504.png
+                    beds: 1
+                    size: 49
+                    rent: 150000
+                    status:
+                      state: auctioned
+                      text: The house is currently being auctioned. The auction will end at Oct 27 2026, 10:00:00 CET. The highest bid so far is 0 gold and has been submitted by Krawk Sider.
+                      auction: {ends_at: '2026-10-27T09:00:00Z', current_bid: 0, bidder: Krawk Sider}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/HousesNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/library/achievements:
+    get:
+      tags: [Library]
+      operationId: getAchievements
+      summary: Common achievements from the library
+      description: |
+        Reads the achievements page. Each item carries `name`, `grade`, `points` and `description`,
+        in page order: grade 1 to 4 and, within each grade, the table order.
+        `points` is the range in the page legend for the grade ("Grade 1: 1-3 points"); a single value
+        ("10 points") comes out with `min` equal to `max`. The page does not state the points of each achievement.
+
+        `secret_count` is the number of secret achievements the page announces. Secret achievements have
+        no name or description on the site and are not in the list. The source URL takes no parameter from the client.
+      parameters:
+        - name: grade
+          in: query
+          description: Keeps only this grade, from 1 to 4. Empty lists all of them. Any other value responds 400 `Invalid grade.`; a grade without achievements responds 200 with an empty list.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 4
+            example: 2
+      responses:
+        '200':
+          description: Count, secret achievements and the list, already filtered by grade.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AchievementList'
+              example:
+                count: 2
+                secret_count: 204
+                achievements:
+                  - name: A reliable Friend
+                    grade: 1
+                    points: {min: 1, max: 3}
+                    description: The hungry ram devoured the whole bunch of turnips in a single bite, then looked at you as if it was ready for more. Make sure to keep it well fed along the way.
+                  - name: Arsenal of War
+                    grade: 3
+                    points: {min: 7, max: 9}
+                    description: Feared by your enemies, admired by many - your reputation in weapon mastery precedes you.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Page without the grade tables, without any achievement, without the points legend or without the secret count.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: Achievements data not found!}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/library/boostablebosses:
+    get:
+      tags: [Library]
+      operationId: getBoostableBosses
+      summary: Bosses that can be boosted
+      description: |
+        The page changes rarely, so the API reads it once a day, at 10:10 Berlin time (after the server save), and
+        when the service starts, and answers from memory. `updated_at` tells when it was read and `stale` is true when
+        a failed read left the last good answer in place; a new attempt runs every 15 minutes. `Cache-Control` lasts
+        until the next refresh. The boosted boss changes at the server save (10:00 Berlin time); the cached answer
+        shows it from 10:10.
+      responses:
+        '200':
+          description: Boss of the day and the list.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bosses'
+        '404':
+          description: Boss of the day or list missing.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: Boostable Bosses data not found!}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/library/creatures:
+    get:
+      tags: [Library]
+      operationId: getCreatures
+      summary: Library creatures
+      description: |
+        Without `creature_race`, returns the general list. `count` is the size of `creatures`.
+        Each item carries only `name`, `race` and `image`.
+
+        With `creature_race`, opens that creature's page and `count` is 1.
+        `summary` holds the story. The hitpoints and experience paragraphs
+        leave `summary` and become `creature_status`.
+
+        `summonable` and `convinceable` can differ. 690 mana to summon,
+        without convincing, gives `summonable` true, `convinceable` false and `mana` 690.
+        `They carry nothing` leaves `loot` empty. `paralysable` is false only when
+        the page says the creature cannot be paralysed. `sees_invisible` is
+        true only when the page says the creature senses invisible creatures.
+
+        The boosted creature of the day stays in the response. Without the list and without the creature's page, the response is 404.
+
+        The page changes rarely, so the API reads it once a day, at 10:10 Berlin time (after the server save), and
+        when the service starts, and answers from memory. `updated_at` tells when it was read and `stale` is true when
+        a failed read left the last good answer in place; a new attempt runs every 15 minutes. `Cache-Control` lasts
+        until the next refresh.
+
+        The pages are cached the same way: the list once a day, and each spell or creature page once a day, read on
+        first use. Only a name in the cached list opens a page; any other name is a 404 without a read to tibia.com.
+        `updated_at`, `stale` and `Cache-Control` follow the cache of the page served.
+
+        The boosted creature changes at the server save (10:00 Berlin time); the cached answer shows it from 10:10.
+      parameters:
+        - name: creature_race
+          in: query
+          description: Race of a creature, such as demon. Empty lists the general page.
+          schema:
+            type: string
+            example: demon
+      responses:
+        '200':
+          description: Count, boosted creature and the list. On a race page, each item includes summary and creature_status.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Creatures'
+              examples:
+                demon:
+                  summary: Demon page
+                  value:
+                    count: 1
+                    boosted: {name: Crape Man, race: crapeman}
+                    updated_at: '2026-10-23T08:10:02Z'
+                    stale: false
+                    creatures:
+                      - name: Demons
+                        race: demon
+                        image: https://static.tibia.com/images/library/demon.gif
+                        summary: |
+                          The famous knight Apoc once wrote: "Demons are the most malevolent, powerful, and dangerous creatures in Tibia. In addition to their awesome physical strength, they can also use powerful spells, such as fireballs and fire fields. Especially dangerous is their gaze, which can produce beams of pure energy to annihilate their poor victims. Moreover, they drain mana off their victims, heal themselves and summon fire elementals as their vassals.
+
+                          Fortunately, Demons usually live in the deepest dungeons near hell but sometimes they appear also on the surface. When they do, they leave a track of death and destruction behind them. Nobody has ever been able to slay even one of these entities and only very few adventurers have survived an encounter with them."
+                        creature_status:
+                          hitpoints: 8200
+                          experience: 6000
+                          loot:
+                            - assassin stars
+                            - demon horns
+                            - demonic essence
+                            - fire mushrooms
+                            - gold coins
+                            - great mana potions
+                            - great spirit potions
+                            - platinum coins
+                            - small amethysts
+                            - small emeralds
+                            - small rubies
+                            - small topazes
+                            - ultimate health potions
+                          sometimes_other_items: true
+                          immune: [fire]
+                          strong: [death, earth, energy, physical]
+                          weak: [holy, ice]
+                          paralysable: false
+                          summonable: false
+                          convinceable: false
+                          mana: 0
+                          sees_invisible: true
+                fireelemental:
+                  summary: Fire elemental page
+                  value:
+                    count: 1
+                    boosted: {name: Crape Man, race: crapeman}
+                    updated_at: '2026-10-23T08:10:02Z'
+                    stale: false
+                    creatures:
+                      - name: Fire Elementals
+                        race: fireelemental
+                        image: https://static.tibia.com/images/library/fireelemental.gif
+                        summary: Fire Elementals are entities consisting only of fire. They have been spotted in the wake of demons, and nobody knows whether they are summoned by them or whether they are independent creatures rising out of fire. They are very dangerous fighters and create fire fields or shoot fireballs at their opponents.
+                        creature_status:
+                          hitpoints: 280
+                          experience: 220
+                          loot: []
+                          sometimes_other_items: false
+                          immune: [death, fire]
+                          strong: []
+                          weak: [ice]
+                          paralysable: false
+                          summonable: true
+                          convinceable: false
+                          mana: 690
+                          sees_invisible: true
+                lista:
+                  summary: General list
+                  description: The live list carries the whole catalogue. This example only shows the shape, without summary and without creature_status.
+                  value:
+                    count: 2
+                    boosted: {name: Crape Man, race: crapeman}
+                    updated_at: '2026-10-23T08:10:02Z'
+                    stale: false
+                    creatures:
+                      - name: Acid Blobs
+                        race: acidblob
+                        image: https://static.tibia.com/images/library/acidblob.gif
+                      - name: Demons
+                        race: demon
+                        image: https://static.tibia.com/images/library/demon.gif
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: "Without the list, or a race missing from the cached list."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: Creatures data not found!}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/library/experiencetable:
+    get:
+      tags: [Library]
+      operationId: getExperienceTable
+      summary: Experience required per level
+      description: |
+        The source URL takes no parameter from the client. `experience_table` is a single list, ordered by level.
+        `max_level` repeats the last level exposed. The page's ceiling rises over time; the field follows that last item.
+
+        The page changes rarely, so the API reads it once a day, at 10:10 Berlin time (after the server save), and
+        when the service starts, and answers from memory. `updated_at` tells when it was read and `stale` is true when
+        a failed read left the last good answer in place; a new attempt runs every 15 minutes. `Cache-Control` lasts
+        until the next refresh.
+      responses:
+        '200':
+          description: Full table.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExperienceTable'
+              example:
+                max_level: {level: 3500, experience: 713359324800}
+                updated_at: '2026-10-23T08:10:02Z'
+                stale: false
+                experience_table:
+                  - {level: 1, experience: 0}
+                  - {level: 3500, experience: 713359324800}
+        '404':
+          description: Table missing.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: Experience Table data not found!}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/library/maps:
+    get:
+      tags: [Library]
+      operationId: getMaps
+      summary: Maps and areas of the Tibia world
+      description: |
+        Without `region`, reads the page tree: each area carries `name`, `region` (the link slug),
+        `location` (the page region, such as Main Continent) and `category` (the sub-region, such as Cities,
+        when the page has one). `image` is the world map. The order is the page order.
+
+        With `region`, opens the area page and `count` is 1. The item gains `image` (the area map) and
+        `description` (the page paragraphs, separated by a blank line). tibia.com answers an unknown
+        slug with the list itself, so the detail reads the list first: it validates the slug and gives
+        `location` and `category`. That is why the detail makes two reads from tibia.com.
+      parameters:
+        - name: region
+          in: query
+          description: "Slug of an area, such as thais. Case-insensitive. Letters and digits only, up to 80; anything else responds 400 `Invalid name.`. Empty lists them all."
+          schema:
+            type: string
+            example: thais
+      responses:
+        '200':
+          description: List of areas or, with region, the details of one.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MapList'
+              examples:
+                lista:
+                  summary: General list
+                  value:
+                    count: 3
+                    image: https://static.tibia.com/images/library/map_small.jpg
+                    maps:
+                      - {name: Thais, region: thais, location: Main Continent, category: Cities}
+                      - {name: Chazorai, region: chazorai, location: Zao}
+                      - {name: Rookgaard, region: rookgaard, location: Islands}
+                thais:
+                  summary: Thais page
+                  value:
+                    count: 1
+                    maps:
+                      - name: Thais
+                        region: thais
+                        location: Main Continent
+                        category: Cities
+                        image: https://static.tibia.com/images/library/map_thais.jpg
+                        description: Thais is the largest city in Tibia. It is situated in the southwest of the continent at the bay of the same name and extends far to the hinterland.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Page without areas, slug not in the list, or area page without a name, map or description.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: Maps data not found!}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/library/spells:
+    get:
+      tags: [Library]
+      operationId: getSpells
+      summary: Library spell list
+      description: |
+        Without `spell`, returns the general list. `count` is the size of `spells`.
+        `level` is null when the page cell is "-". `mana` and `magic_type` become "variable" when the cell is "var.".
+        The order is the table's order.
+
+        With `spell`, opens that spell's page and `count` is 1.
+        The item gains `image`, `summary`, `vocations` and `cooldown`.
+        `magic_type`, `soul_points` and `amount` are included when the page has the row.
+        Runes gain `rune`. The source URL only receives the validated slug.
+
+        The page changes rarely, so the API reads it once a day, at 10:10 Berlin time (after the server save), and
+        when the service starts, and answers from memory. `updated_at` tells when it was read and `stale` is true when
+        a failed read left the last good answer in place; a new attempt runs every 15 minutes. `Cache-Control` lasts
+        until the next refresh.
+
+        The pages are cached the same way: the list once a day, and each spell or creature page once a day, read on
+        first use. Only a name in the cached list opens a page; any other name is a 404 without a read to tibia.com.
+        `updated_at`, `stale` and `Cache-Control` follow the cache of the page served.
+      parameters:
+        - name: spell
+          in: query
+          description: Slug of a spell, such as animatedeadrune. Empty lists the general page.
+          schema:
+            type: string
+            example: animatedeadrune
+      responses:
+        '200':
+          description: Full list from the page.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpellList'
+              examples:
+                lista:
+                  summary: General list
+                  value:
+                    count: 2
+                    updated_at: '2026-10-23T08:10:02Z'
+                    stale: false
+                    spells:
+                      - name: Light Healing
+                        spell: lighthealing
+                        words: exura
+                        group: Healing
+                        type: Instant
+                        level: 8
+                        mana: 20
+                        premium: false
+                      - name: Avatar of Balance
+                        spell: avatarofbalance
+                        words: uteta res tio
+                        group: Support
+                        type: Instant
+                        level: null
+                        mana: 1200
+                        premium: true
+                animatedeadrune:
+                  summary: Animate Dead Rune page
+                  value:
+                    count: 1
+                    updated_at: '2026-10-23T08:10:02Z'
+                    stale: false
+                    spells:
+                      - name: Animate Dead Rune
+                        spell: animatedeadrune
+                        words: adana mort
+                        image: https://static.tibia.com/images/library/animatedeadrune.png
+                        summary: This is a very scary spell.
+                        group: Support
+                        type: Rune
+                        vocations: [Druid, Sorcerer]
+                        cooldown: {seconds: 2, group_seconds: 2}
+                        soul_points: 5
+                        amount: 1
+                        level: 27
+                        mana: 600
+                        premium: true
+                        rune:
+                          vocations: [Knight, Druid, Monk, Paladin, Sorcerer]
+                          group: Support
+                          level: 27
+                          magic_level: 4
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: "Table missing, or a slug missing from the cached list."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: Spells data not found!}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/library/worldquests:
+    get:
+      tags: [Library]
+      operationId: getWorldQuests
+      summary: World events and world tasks from the library
+      description: |
+        Without `worldquest`, reads the list: the running events, the upcoming events and the world tasks,
+        in that order. `type` is `event` or `task`. Events carry `status` (`running` or `upcoming`) and the
+        page date: `ends_on` for the running event, `begins_on` for an upcoming one. Tasks have no date.
+
+        With `worldquest`, opens the quest's page and `count` is 1. The item gains `worlds_successful`,
+        `worlds_trying` and `worlds_failed`, always present on the detail (empty when the page says
+        "No world..."). Ranked worlds come grouped: each group has `rank`, `date` and the tied worlds,
+        as on the page. The name is case-insensitive and goes into the source URL escaped.
+      parameters:
+        - name: worldquest
+          in: query
+          description: Name of a quest, such as A Piece of Cake. Empty lists the general page. `/`, `\`, `?`, `#`, `&` and `%` respond 400.
+          schema:
+            type: string
+            example: A Piece of Cake
+      responses:
+        '200':
+          description: List of quests or, with worldquest, the details of one.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorldQuestList'
+              examples:
+                lista:
+                  summary: General list
+                  value:
+                    count: 3
+                    world_quests:
+                      - {name: Annual Autumn Vintage, type: event, status: running, description: Winterberries can now be found all over Tibia!, ends_on: '2026-10-24'}
+                      - {name: A Piece of Cake, type: event, status: upcoming, description: Defeat the invading cake golems., begins_on: '2027-02-21'}
+                      - {name: Last Creep Standing, type: task, description: Participate in a fun challenge of wits and agility.}
+                apieceofcake:
+                  summary: A Piece of Cake page
+                  value:
+                    count: 1
+                    world_quests:
+                      - name: A Piece of Cake
+                        type: event
+                        status: upcoming
+                        description: Defeat the invading cake golems and use the corpses of your conquered enemies to build a bridge to a legendary island reachable only once a year.
+                        begins_on: '2027-02-21'
+                        worlds_successful:
+                          - {rank: 1, date: '2026-02-22', worlds: [Calmera, Dia, Harmonia]}
+                          - {rank: 10, date: '2026-02-23', worlds: [Aethera, Antica]}
+                        worlds_trying: []
+                        worlds_failed:
+                          - {rank: 1, date: '2026-02-26', worlds: [Escura, Gladibra]}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: List without quests, unknown quest ("World quest not found!") or page without the details table.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: World Quests data not found!}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/tools/online:
+    get:
+      tags: [Tools]
+      operationId: getOnlineBatch
+      summary: Who is online in several worlds, in one call
+      description: |
+        Reads the Players Online list of each requested world. Each world comes with the time
+        of the read (`updated_at`). The list is never older than 30 s; when the new read fails,
+        the last good list (up to 5 min) comes with `stale: true`. One call counts 1 against the quota,
+        whatever the number of worlds. An `If-None-Match` equal to the `ETag` responds
+        304 without counting against the quota. The `ETag` covers `worlds`, `unknown` and `failed`, and leaves
+        `fetched_at` and each world's `updated_at` out: it only changes when who is
+        online changes (or `stale`, `unknown`, `failed`). A re-read that finds the same
+        players keeps responding 304; on a 304, the newest `updated_at` does not reach the
+        client.
+
+        The route only reads tibia.com on demand and protects the server against blocking: few
+        reads at the same time, spaced out, with a per-minute ceiling and a growing pause
+        when tibia.com responds 403, 429 or 503. A world held back by this protection
+        goes into `failed` with 503 `Upstream busy.`.
+
+        The list of valid worlds, which separates `unknown` from `failed`, holds until the next
+        server save (10:00 Berlin time). If tibia.com fails, the last good list stays
+        valid.
+      parameters:
+        - name: worlds
+          in: query
+          required: true
+          description: Worlds separated by commas, or the parameter repeated. Up to 100, not counting duplicates. Case-insensitive; leading and trailing spaces are ignored.
+          style: form
+          explode: false
+          schema:
+            type: array
+            maxItems: 100
+            items: {type: string}
+          example: [Antica, Yonabra]
+        - name: fields
+          in: query
+          description: "`names` returns only the names in `online`; `full` (default) returns OnlinePlayer."
+          schema:
+            type: string
+            enum: [full, names]
+            default: full
+        - name: If-None-Match
+          in: header
+          schema: {type: string}
+      responses:
+        '200':
+          description: Online players per world, in request order, with unknown worlds and failures apart.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              schema: {type: string, example: 'public, max-age=30'}
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnlineBatch'
+              examples:
+                names:
+                  summary: fields=names
+                  value:
+                    fetched_at: '2026-10-16T17:40:15Z'
+                    worlds:
+                      - name: Antica
+                        players_online: 3
+                        updated_at: '2026-10-16T17:40:02Z'
+                        stale: false
+                        online: [Aczza Kina, Njorn, Sheng]
+                      - name: Yonabra
+                        players_online: 0
+                        updated_at: '2026-10-16T17:39:58Z'
+                        stale: false
+                        online: []
+                    unknown: [Gladeraa]
+                    failed: []
+                full:
+                  summary: fields=full (default)
+                  value:
+                    fetched_at: '2026-10-16T17:40:15Z'
+                    worlds:
+                      - name: Antica
+                        players_online: 1
+                        updated_at: '2026-10-16T17:40:02Z'
+                        stale: false
+                        online:
+                          - {name: Sheng, level: 2455, share_experience: {min: 1636, max: 3682}, vocation: Elder Druid}
+                    unknown: []
+                    failed:
+                      - {name: Yonabra, status_code: 520, message: Upstream request failed.}
+        '304':
+          description: Nothing changed since the ETag sent. No body. Does not count against the quota.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/UpstreamBusy'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/tools/online/{name}:
+    get:
+      tags: [Tools]
+      operationId: getOnline
+      summary: Tells whether the character is online in their world
+      description: Compares the whole name, including when there is more than one space, with the world's Players Online list.
+      parameters:
+        - $ref: '#/components/parameters/CharacterName'
+      responses:
+        '200':
+          description: Profile data and the online flag.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Online'
+              example:
+                name: Njorn
+                level: 35
+                share_experience: {min: 23, max: 52}
+                vocation: Master Sorcerer
+                online: false
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Character not found.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: Could not find character.}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+        '520':
+          $ref: '#/components/responses/UpstreamFailed'
+  /v2/tools/experience/share/{levels}:
+    get:
+      tags: [Tools]
+      operationId: getShareExperience
+      summary: "Share experience range of a level or a party"
+      description: |
+        Pure calculation: reads nothing from tibia.com, so maintenance and upstream failures do not affect it.
+        Each level gets the same `share_experience` range as the character profile:
+        `min` is the integer part of level / 3 * 2 and `max` the integer part of level / 2 * 3.
+
+        With more than one level (the party), `party.shared_range` is the overlap of every range
+        (the highest `min` and the lowest `max`), left out when the ranges do not overlap.
+        `party.can_share` is true when every level of the party is inside `shared_range`. The answer never
+        changes, so `Cache-Control` lasts one day.
+      parameters:
+        - name: levels
+          in: path
+          required: true
+          description: "One level, or up to 100 levels split by commas. Each level from 1 to 100000."
+          schema:
+            type: string
+            example: '35,50,60'
+      responses:
+        '200':
+          description: "Range of each level and of the party."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareExperience'
+              examples:
+                single:
+                  summary: Njorn alone
+                  value:
+                    levels:
+                      - {level: 35, share_experience: {min: 23, max: 52}}
+                    party: {lowest: 35, highest: 35, can_share: true, shared_range: {min: 23, max: 52}}
+                party:
+                  summary: Party that cannot share
+                  value:
+                    levels:
+                      - {level: 23, share_experience: {min: 15, max: 34}}
+                      - {level: 35, share_experience: {min: 23, max: 52}}
+                    party: {lowest: 23, highest: 35, can_share: false, shared_range: {min: 23, max: 34}}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v2/tools/vocationstatus/{vocation}/{level}:
+    get:
+      tags: [Tools]
+      operationId: getVocationStatus
+      summary: "Status of a vocation at a level"
+      description: |
+        Pure calculation: reads nothing from tibia.com, so maintenance and upstream failures do not affect it.
+
+        Up to level 8 every character gains as one without vocation: hitpoints = 145 + 5 × level,
+        mana = 50 + 5 × level and capacity = 390 + 10 × level. From level 9 on, the gain of the vocation
+        adds to the level 8 values (185 hitpoints, 90 mana, 470 capacity) for each level above 8:
+        Druid and Sorcerer 5/30/10, Knight 15/5/25, Monk 10/10/25, Paladin 10/15/20 (hitpoints/mana/capacity).
+
+        `capacity` also brings the capacity with each tier of the capacity imbuement (+3%, +8% and +15%,
+        rounded down). `regeneration` is the one without promotion. The promotion does not change hitpoints,
+        mana or capacity, so `promoted` brings only the name of the promoted vocation and its `regeneration`.
+        The answer never changes, so `Cache-Control` lasts one day.
+      parameters:
+        - name: vocation
+          in: path
+          required: true
+          description: "Base vocation, without regard to case: druid, knight, monk, paladin or sorcerer. The promoted names are not taken; the answer brings the promoted vocation."
+          schema:
+            type: string
+            enum: [druid, knight, monk, paladin, sorcerer]
+            example: knight
+        - name: level
+          in: path
+          required: true
+          description: "Level from 1 to 100000."
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100000
+            example: 100
+      responses:
+        '200':
+          description: "Status of the vocation at the level, with the promoted vocation."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VocationStatus'
+              examples:
+                knight:
+                  summary: Knight at level 100
+                  value:
+                    vocation: Knight
+                    level: 100
+                    hitpoints: 1565
+                    mana: 550
+                    capacity: {base: 2770, basic_imbuement: 2853, intricate_imbuement: 2991, powerful_imbuement: 3185}
+                    regeneration: {life: {points: 1, seconds: 6}, mana: {points: 2, seconds: 6}}
+                    promoted:
+                      name: Elite Knight
+                      regeneration: {life: {points: 1, seconds: 4}, mana: {points: 2, seconds: 6}}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v2/tools/skills/raw:
+    get:
+      tags: [Tools]
+      operationId: getRawSkills
+      summary: "Raw skills, without the loyalty bonus"
+      description: |
+        Loyalty raises the skills shown while the character is online. This calculator takes that bonus out
+        and returns the raw skills, the ones without it. Pure calculation: reads nothing from tibia.com.
+
+        Send each skill as `level,percent_left`, where `percent_left` is how much is left to the next level
+        (30 means 70% of the way is done). One or more of `magic`, `fist`, `club`, `sword`, `axe`, `distance`,
+        `shielding` and `fishing` per call; the answer keeps that order. Send the loyalty as `loyalty`
+        (bonus from 0 to 50) or as `loyalty_points` (5% every 360 points, up to 50%), not both.
+
+        Points of a level: `C × (f^(level − offset) − 1) / (f − 1)`, with C/offset 1600/0 for magic,
+        50/10 for fist, club, sword and axe, 25/10 for distance, 100/10 for shielding and 20/10 for fishing,
+        and `f` the factor of the vocation for that skill. The online points are divided by 1 + bonus/100
+        and turned back into a level and `percent_left`. The answer never changes, so `Cache-Control` lasts
+        one day.
+      parameters:
+        - name: vocation
+          in: query
+          required: true
+          description: "Vocation: none, druid, knight, monk, paladin or sorcerer, without regard to case."
+          schema:
+            type: string
+            enum: [none, druid, knight, monk, paladin, sorcerer]
+            example: knight
+        - name: loyalty
+          in: query
+          description: "Loyalty bonus in percent, from 0 to 50. Send this or loyalty_points."
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 50
+            example: 35
+        - name: loyalty_points
+          in: query
+          description: "Loyalty points, from 0 to 1000000. The bonus is 5% every 360 points, up to 50%. Send this or loyalty."
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 1000000
+            example: 2600
+        - name: magic
+          in: query
+          description: "Magic level shown online, as level,percent_left. percent_left is above 0 and up to 100; level from 0 to 200."
+          schema:
+            type: string
+            example: '12,50'
+        - name: fist
+          in: query
+          description: "Fist fighting shown online, as level,percent_left. percent_left is above 0 and up to 100; level from 10 to 200."
+          schema:
+            type: string
+            example: '110,30'
+        - name: club
+          in: query
+          description: "Club fighting shown online, as level,percent_left. percent_left is above 0 and up to 100; level from 10 to 200."
+          schema:
+            type: string
+            example: '110,30'
+        - name: sword
+          in: query
+          description: "Sword fighting shown online, as level,percent_left. percent_left is above 0 and up to 100; level from 10 to 200."
+          schema:
+            type: string
+            example: '110,30'
+        - name: axe
+          in: query
+          description: "Axe fighting shown online, as level,percent_left. percent_left is above 0 and up to 100; level from 10 to 200."
+          schema:
+            type: string
+            example: '120,30'
+        - name: distance
+          in: query
+          description: "Distance fighting shown online, as level,percent_left. percent_left is above 0 and up to 100; level from 10 to 200."
+          schema:
+            type: string
+            example: '120,30'
+        - name: shielding
+          in: query
+          description: "Shielding shown online, as level,percent_left. percent_left is above 0 and up to 100; level from 10 to 200."
+          schema:
+            type: string
+            example: '110,45'
+        - name: fishing
+          in: query
+          description: "Fishing shown online, as level,percent_left. percent_left is above 0 and up to 100; level from 10 to 200."
+          schema:
+            type: string
+            example: '30,50'
+      responses:
+        '200':
+          description: "Online and raw state of each skill sent."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RawSkills'
+              examples:
+                knight:
+                  summary: Knight with 35% loyalty
+                  value:
+                    vocation: Knight
+                    loyalty: {bonus: 35}
+                    skills:
+                      - skill: axe
+                        online: {level: 120, percent_left: 30, points: 19122198}
+                        raw: {level: 117, percent_left: 46, points: 14164591}
+                      - skill: shielding
+                        online: {level: 110, percent_left: 45, points: 14537546}
+                        raw: {level: 107, percent_left: 60, points: 10768552}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v2/tools/exerciseweapons/{charges}:
+    get:
+      tags: [Tools]
+      operationId: getExerciseWeaponsTime
+      summary: "Time to spend exercise weapon charges"
+      description: |
+        Pure calculation: reads nothing from tibia.com. One charge is spent every 2 seconds, so
+        `total_seconds` is `charges × 2`. Any amount is taken, so the charges of many weapons add up
+        (an exercise weapon has 500 charges, a durable one 1800 and a lasting one 14400). `duration` splits
+        the time into hours, minutes and seconds; hours do not roll into days. The answer never changes,
+        so `Cache-Control` lasts one day.
+      parameters:
+        - name: charges
+          in: path
+          required: true
+          description: "Charges to spend, from 1 to 1000000000000."
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 1000000000000
+            example: 14400
+      responses:
+        '200':
+          description: "Time to spend the charges."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExerciseTime'
+              examples:
+                lasting:
+                  summary: One lasting exercise weapon
+                  value:
+                    charges: 14400
+                    total_seconds: 28800
+                    duration: {hours: 8, minutes: 0, seconds: 0}
+                    formatted: '08:00:00'
+                many:
+                  summary: Three lasting exercise weapons
+                  value:
+                    charges: 43200
+                    total_seconds: 86400
+                    duration: {hours: 24, minutes: 0, seconds: 0}
+                    formatted: '24:00:00'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v2/tools/experience/level/{level}:
+    get:
+      tags: [Tools]
+      operationId: getLevelExperience
+      summary: "Experience needed for a level"
+      description: |
+        Pure calculation: reads nothing from tibia.com. Uses the official table, where level L needs
+        50/3 × (L³ − 6L² + 17L − 12) experience. `next_level_experience` is what level + 1 needs and
+        `to_next_level` the difference. The highest level taken is 821009, the last one whose experience fits
+        in a 64-bit integer; there the next level fields are left out. The answer never changes,
+        so `Cache-Control` lasts one day.
+      parameters:
+        - name: level
+          in: path
+          required: true
+          description: "Level, from 1 to 821009."
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 821009
+            example: 100
+      responses:
+        '200':
+          description: "Experience of the level and of the next one."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LevelExperience'
+              examples:
+                level:
+                  summary: Level 100
+                  value: {level: 100, experience: 15694800, next_level_experience: 16180000, to_next_level: 485200}
+                top:
+                  summary: Highest level taken
+                  value: {level: 821009, experience: 9223363599763206400}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v2/tools/experience/points/{experience}:
+    get:
+      tags: [Tools]
+      operationId: getExperienceLevel
+      summary: "Level of an amount of experience"
+      description: |
+        Pure calculation: reads nothing from tibia.com. `level` is the highest level whose experience fits
+        in `experience`, from the same table as `/v2/tools/experience/level/{level}`. `progress` is the share
+        of the level already done, from 0 to 1, and `exact_level` is `level` + `progress`, as the bar in the game.
+        From the experience of level 821009 on, the level stays 821009 and the next level fields are left out.
+        The answer never changes, so `Cache-Control` lasts one day.
+      parameters:
+        - name: experience
+          in: path
+          required: true
+          description: "Experience, from 0 to 9223372036854775807."
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            maximum: 9223372036854775807
+            example: 16000000
+      responses:
+        '200':
+          description: "Level of the experience and the progress inside it."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExperienceStatus'
+              examples:
+                points:
+                  summary: Inside level 100
+                  value:
+                    experience: 16000000
+                    level: 100
+                    exact_level: 100.6290189612531
+                    level_experience: 15694800
+                    next_level_experience: 16180000
+                    to_next_level: 180000
+                    progress: 0.6290189612530915
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v2/tools/hunt/split:
+    post:
+      tags: [Tools]
+      operationId: splitHunt
+      summary: "Split the profit or waste of a party hunt"
+      description: |
+        Paste the text of the Party Hunt Analyzer, as copied from the game. Pure calculation: reads nothing
+        from tibia.com, and the text is neither kept nor logged. A line without indent and without a colon opens
+        a member (` (Leader)` sets `leader`); the indented `Key: value` lines below fill it in. `Balance` is
+        required; `Loot`, `Supplies`, `Damage` and `Healing` default to 0, other keys are ignored. The session lines on top are
+        skipped: the totals are summed from the members. The balance, profit or waste, is split evenly:
+        `share` is rounded down and `remainder` (0 to members − 1 gold) stays with those who pay.
+        `damage_percent` and `healing_percent` are the member's part of the party `damage` and `healing`, rounded to 2 decimals (0 when the total is 0).
+        `difference` is the member's balance minus `share`: positive pays, negative is paid. `transfers`
+        evens the party with at most members − 1 bank transfers, listed in the analyzer order, by payer and then by payee; `text` is the line for the
+        bank NPC. Each answer belongs to its request: `Cache-Control: no-store` and no `ETag`.
+      requestBody:
+        required: true
+        description: "Text of the Party Hunt Analyzer, up to 64 KB. At least two members."
+        content:
+          text/plain:
+            schema:
+              type: string
+              maxLength: 65536
+            examples:
+              party:
+                summary: Four members, profit
+                value: |
+                  Session data: From 2026-10-24, 09:22:21 to 2026-10-24, 11:49:20
+                  Session: 02:26h
+                  Loot Type: Leader
+                  Loot: 37,346,426
+                  Supplies: 10,586,766
+                  Balance: 26,759,660
+                  Aldor
+                    Loot: 15,406,481
+                    Supplies: 990,847
+                    Balance: 14,415,634
+                    Damage: 31,087,106
+                    Healing: 5,312,882
+                  Bryn
+                    Loot: 53,601
+                    Supplies: 1,541,659
+                    Balance: -1,488,058
+                    Damage: 35,836,000
+                    Healing: 15,399,191
+                  Cael Var (Leader)
+                    Loot: 19,643,824
+                    Supplies: 3,026,175
+                    Balance: 16,617,649
+                    Damage: 22,221,354
+                    Healing: 10,163,264
+                  Dorin
+                    Loot: 2,242,520
+                    Supplies: 5,028,085
+                    Balance: -2,785,565
+                    Damage: 51,284,298
+                    Healing: 3,893,937
+      responses:
+        '200':
+          description: "Even split and the transfers that settle it."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HuntSplit'
+              examples:
+                party:
+                  summary: Four members, profit
+                  value:
+                    loot: 37346426
+                    supplies: 10586766
+                    balance: 26759660
+                    share: 6689915
+                    remainder: 0
+                    damage: 140428758
+                    healing: 34769274
+                    members:
+                      - {name: Aldor, leader: false, loot: 15406481, supplies: 990847, balance: 14415634, difference: 7725719, damage: 31087106, healing: 5312882, damage_percent: 22.14, healing_percent: 15.28}
+                      - {name: Bryn, leader: false, loot: 53601, supplies: 1541659, balance: -1488058, difference: -8177973, damage: 35836000, healing: 15399191, damage_percent: 25.52, healing_percent: 44.29}
+                      - {name: Cael Var, leader: true, loot: 19643824, supplies: 3026175, balance: 16617649, difference: 9927734, damage: 22221354, healing: 10163264, damage_percent: 15.82, healing_percent: 29.23}
+                      - {name: Dorin, leader: false, loot: 2242520, supplies: 5028085, balance: -2785565, difference: -9475480, damage: 51284298, healing: 3893937, damage_percent: 36.52, healing_percent: 11.2}
+                    transfers:
+                      - {from: Aldor, to: Bryn, amount: 7725719, text: "Aldor: transfer 7725719 to Bryn"}
+                      - {from: Cael Var, to: Bryn, amount: 452254, text: "Cael Var: transfer 452254 to Bryn"}
+                      - {from: Cael Var, to: Dorin, amount: 9475480, text: "Cael Var: transfer 9475480 to Dorin"}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          description: "The text is over 64 KB: `Hunt too large.`"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v2/wiki/rashid/location:
+    get:
+      tags: [Wiki]
+      operationId: getRashidLocation
+      summary: "City where Rashid is today"
+      description: |
+        Fixed weekly schedule, computed at request time: reads nothing from tibia.com or from the wiki.
+        Rashid changes city at the server save, 10:00 Europe/Berlin, so before 10:00 he is still in the
+        city of the day before. `since` and `until` are the server saves around the current game day,
+        in UTC; `schedule` lists the whole week, from sunday to saturday. `image` links to the map on
+        TibiaWiki BR. `Cache-Control` lasts until the next server save.
+      responses:
+        '200':
+          description: "Rashid's city today and the weekly schedule."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RashidLocation'
+              examples:
+                monday:
+                  summary: Monday after the server save
+                  value:
+                    city: Svargrond
+                    weekday: monday
+                    image: 'https://www.tibiawiki.com.br/images/3/34/Rashid_Svargrond.png'
+                    since: '2026-10-12T08:00:00Z'
+                    until: '2026-10-13T08:00:00Z'
+                    schedule:
+                      - {weekday: sunday, city: Carlin, image: 'https://www.tibiawiki.com.br/images/5/5f/Rashid_Carlin.png'}
+                      - {weekday: monday, city: Svargrond, image: 'https://www.tibiawiki.com.br/images/3/34/Rashid_Svargrond.png'}
+                      - {weekday: tuesday, city: Liberty Bay, image: 'https://www.tibiawiki.com.br/images/3/33/Rashid_Liberty_Bay.png'}
+                      - {weekday: wednesday, city: Port Hope, image: 'https://www.tibiawiki.com.br/images/c/cf/Rashid_Port_Hope.png'}
+                      - {weekday: thursday, city: Ankrahmun, image: 'https://www.tibiawiki.com.br/images/2/2a/Rashid_Ankrahmun.png'}
+                      - {weekday: friday, city: Darashia, image: 'https://www.tibiawiki.com.br/images/c/cb/Rashid_Darashia.png'}
+                      - {weekday: saturday, city: Edron, image: 'https://www.tibiawiki.com.br/images/6/6f/Rashid_Edron.png'}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v2/wiki/categories:
+    get:
+      tags: [Wiki]
+      operationId: getWikiCategories
+      summary: "Item categories of the wiki"
+      description: |
+        The item categories the API serves, each with how many items it has now. Data comes from
+        TibiaWiki BR, extracted by the TibiaWikiDataLeech and approved by an Admin; the API reads it from
+        the leech database and never triggers an extraction. Only active items are counted: an item that
+        left the wiki is gone. `Cache-Control` lasts 5 minutes.
+      responses:
+        '200':
+          description: "Every category, in a fixed order, with its count and the total."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WikiCategoryList'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/WikiUnavailable'
+  /v2/wiki/{category}:
+    get:
+      tags: [Wiki]
+      operationId: getWikiItems
+      summary: "Items of a category"
+      description: |
+        Basic data of every item of `{category}`, by name. Slugs come from `/v2/wiki/categories`; the
+        wiki type behind each one stays in Portuguese in `type`, as on TibiaWiki BR. Fields without a value
+        are left out. `wiki_url` and `image_url` are full links to TibiaWiki BR. `Cache-Control` lasts 5 minutes.
+      parameters:
+        - $ref: '#/components/parameters/WikiCategory'
+      responses:
+        '200':
+          description: "The category and its items."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WikiItemList'
+              example:
+                category: {slug: axes, name: Axes, group: weapons}
+                count: 1
+                items:
+                  - name: Hellforged Axe
+                    type: Machados
+                    level_required: 110
+                    attack: 51
+                    defense: 28
+                    weight: 88
+                    image_url: 'https://www.tibiawiki.com.br/images/1/1e/Hellforged_Axe.gif'
+                    wiki_url: 'https://www.tibiawiki.com.br/wiki/Hellforged_Axe'
+        '404':
+          $ref: '#/components/responses/WikiNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/WikiUnavailable'
+  /v2/wiki/{category}/{name}:
+    get:
+      tags: [Wiki]
+      operationId: getWikiItem
+      summary: "One item, with everything the wiki says"
+      description: |
+        One item of `{category}` by name, without case (`hellforged axe` works). Known fields of the
+        infobox come with English names and types: hands as 1 or 2, `defense_mod`, `max_tier`,
+        `imbuement_slots`, `classification`, `perks`, `dropped_by`, `vocations`, `skill_boosts`,
+        `resistances`, `element_attack`, `npc_price`. Runes add `rune`. Every other field of the infobox
+        stays in `attributes` with its original key, and so does a value the API cannot read. Texts stay in
+        Portuguese, as on TibiaWiki BR. An item of another category is 404. `Cache-Control` lasts 5 minutes.
+      parameters:
+        - $ref: '#/components/parameters/WikiCategory'
+        - name: name
+          in: path
+          required: true
+          description: "Item name, without case. Over 200 characters is 400 `Invalid name.`."
+          schema: {type: string, maxLength: 200, example: hellforged axe}
+      responses:
+        '200':
+          description: "The item."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WikiItem'
+              example:
+                category: {slug: axes, name: Axes, group: weapons}
+                name: Hellforged Axe
+                title: Hellforged Axe
+                class: Armas
+                type: Machados
+                subtype: null
+                level_required: 110
+                vocations: []
+                weight: 88
+                attack: 51
+                defense: 28
+                defense_mod: 2
+                armor: null
+                hands: 1
+                element_attack: null
+                skill_boosts: []
+                resistances: []
+                classification: 3
+                max_tier: 3
+                imbuement_slots: 1
+                perks: ['+2.00% damage contra bosses e Sinister Embraced', '+6.66% do seu Axe Fighting como extra damage para auto-attacks']
+                dropped_by: [Ferumbras Mortal Shell]
+                value: '180 000 - 450 000'
+                npc_price: 0
+                buy_from: Jogadores.
+                sell_to: Jogadores.
+                stackable: null
+                enchantable: false
+                implemented: '8.2'
+                notes: '* Pode ser obtido como recompensa da The Inquisition Quest.'
+                attributes: {droppedraidby: Ferumbras.}
+                image_url: 'https://www.tibiawiki.com.br/images/1/1e/Hellforged_Axe.gif'
+                wiki_url: 'https://www.tibiawiki.com.br/wiki/Hellforged_Axe'
+                updated_at: '2026-10-25T17:10:50Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/WikiNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/WikiUnavailable'
+  /v2/tools/experience/goal/{level}:
+    get:
+      tags: [Tools]
+      operationId: getExperienceGoal
+      summary: "Experience left to a target level"
+      description: |
+        Pure calculation: reads nothing from tibia.com. `{level}` is the target and the start is either
+        the current `level` or the current `experience`: pass exactly one of them. With `experience`, `level` in
+        the answer is the level that experience reaches, and the experience is kept as is, not rounded down to it.
+        `needed_experience` is `target_experience` − `experience`, from the same table as
+        `/v2/tools/experience/level/{level}`. `progress` is the share of `target_experience` already held,
+        from 0 to 1. A target at or below the start answers 200 with `needed_experience` 0, `progress` 1 and
+        `reached` true. The answer never changes, so `Cache-Control` lasts one day.
+      parameters:
+        - name: level
+          in: path
+          required: true
+          description: "Target level, from 1 to 821009. Anything else responds 400 `Invalid target level.`."
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 821009
+            example: 200
+        - name: level
+          in: query
+          required: false
+          description: "Current level, from 1 to 821009, instead of `experience`. Anything else responds 400 `Invalid level.`; both or neither respond 400 `Pass level or experience.`."
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 821009
+            example: 150
+        - name: experience
+          in: query
+          required: false
+          description: "Current experience, from 0 to 9223372036854775807, instead of `level`. Anything else responds 400 `Invalid experience.`."
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            maximum: 9223372036854775807
+            example: 16000000
+      responses:
+        '200':
+          description: "Experience left to the target and the share already held."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExperienceGoal'
+              examples:
+                level:
+                  summary: From level 150 to 200
+                  value:
+                    level: 150
+                    experience: 54042300
+                    target_level: 200
+                    target_experience: 129389800
+                    needed_experience: 75347500
+                    progress: 0.41767048098072646
+                    reached: false
+                experience:
+                  summary: From an amount of experience inside level 100
+                  value:
+                    level: 100
+                    experience: 16000000
+                    target_level: 200
+                    target_experience: 129389800
+                    needed_experience: 113389800
+                    progress: 0.12365735166141381
+                    reached: false
+                reached:
+                  summary: Target already reached
+                  value:
+                    level: 200
+                    experience: 129389800
+                    target_level: 100
+                    target_experience: 15694800
+                    needed_experience: 0
+                    progress: 1
+                    reached: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v2/docs:
+    get:
+      tags: [Docs]
+      operationId: getDocs
+      summary: Interactive documentation, in English
+      description: |
+        HTML with Redoc in the default language, English. The same as `GET /v2/docs/en`.
+        The browser downloads the script from a CDN with a pinned version. The Go process does not fetch that script.
+      responses:
+        '200':
+          description: HTML page.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            text/html:
+              schema:
+                type: string
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v2/docs/{lang}:
+    get:
+      tags: [Docs]
+      operationId: getDocsByLanguage
+      summary: Interactive documentation in one language
+      description: HTML with Redoc in the requested language, with the language selector at the top of the page.
+      parameters:
+        - $ref: '#/components/parameters/DocsLanguage'
+      responses:
+        '200':
+          description: HTML page.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            text/html:
+              schema:
+                type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v2/docs/openapi.yaml:
+    get:
+      tags: [Docs]
+      operationId: getOpenAPI
+      summary: This specification, in English
+      description: The same as `GET /v2/docs/openapi.en.yaml`.
+      responses:
+        '200':
+          description: OpenAPI 3.0 in YAML.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/yaml:
+              schema:
+                type: string
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v2/docs/openapi.{lang}.yaml:
+    get:
+      tags: [Docs]
+      operationId: getOpenAPIByLanguage
+      summary: This specification in one language
+      description: |
+        Both languages have the same routes, parameters, schemas and examples. Only the texts change.
+      parameters:
+        - $ref: '#/components/parameters/DocsLanguage'
+      responses:
+        '200':
+          description: OpenAPI 3.0 in YAML.
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/yaml:
+              schema:
+                type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+components:
+  parameters:
+    WikiCategory:
+      name: category
+      in: path
+      required: true
+      description: "Category slug, as listed by `/v2/wiki/categories`. An unknown slug is 404."
+      schema: {type: string, example: axes}
+    CharacterName:
+      name: name
+      in: path
+      required: true
+      description: Character name. NBSP becomes a space. `/`, `\`, `?`, `#` and `&` respond 400.
+      schema:
+        type: string
+        example: Njorn
+    World:
+      name: world
+      in: query
+      description: World name. Empty for the list. The first letter is capitalised in the highscores URL.
+      schema:
+        type: string
+        example: Antica
+    WorldPath:
+      name: world
+      in: path
+      required: true
+      schema:
+        type: string
+        example: Antica
+    Page:
+      name: page
+      in: query
+      description: Page starting at 1. Missing means 1. Non-numeric or less than 1 responds 400.
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PagePath:
+      name: page
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    HighscoreCategory:
+      name: category
+      in: query
+      schema:
+        $ref: '#/components/schemas/HighscoreCategory'
+    Vocation:
+      name: vocation
+      in: query
+      schema:
+        $ref: '#/components/schemas/VocationFilter'
+    Protection:
+      name: protection
+      in: query
+      schema:
+        $ref: '#/components/schemas/Protection'
+    WorldTypes:
+      name: types
+      in: query
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          $ref: '#/components/schemas/WorldType'
+    WorldTypesBracket:
+      name: types[]
+      in: query
+      description: The same as `types`, in the format the old collection sends.
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          $ref: '#/components/schemas/WorldType'
+    GuildName:
+      name: name
+      in: path
+      required: true
+      description: "Guild name, case-insensitive. `/`, `\\`, `?`, `#`, `&` and `%` respond 400."
+      schema:
+        type: string
+        example: Alanui Institute
+    HouseTown:
+      name: town
+      in: path
+      required: true
+      description: 'Town, such as Thais or Liberty Bay. Case-insensitive for the known towns. `/`, `\`, `?`, `#`, `&` and `%` respond 400.'
+      schema:
+        type: string
+        example: Thais
+    HouseID:
+      name: house_id
+      in: path
+      required: true
+      description: "House id, as in the list. Digits only, no leading zero; anything else responds 400 `Invalid house id.`."
+      schema:
+        type: integer
+        minimum: 1
+        example: 10301
+    HouseState:
+      name: state
+      in: query
+      description: Only auctioned or only rented houses. Empty brings all. Any other value responds 400 `Unknown state.`.
+      schema:
+        type: string
+        enum: [auctioned, rented]
+    HouseType:
+      name: type
+      in: query
+      description: Houses and flats, or guildhalls. Any other value responds 400 `Unknown type.`.
+      schema:
+        type: string
+        enum: [houses, guildhalls]
+        default: houses
+    HouseOrder:
+      name: order
+      in: query
+      description: Page order. Any other value responds 400 `Unknown order.`.
+      schema:
+        type: string
+        enum: [name, size, rent, bid, end]
+        default: name
+    DocsLanguage:
+      name: lang
+      in: path
+      required: true
+      description: Documentation language. Case-sensitive. Any other value responds 404.
+      schema:
+        type: string
+        enum: [en, pt-BR]
+  headers:
+    XApiVersion:
+      description: API version.
+      schema: {type: string, example: 2.4.2}
+    CacheControl:
+      schema: {type: string, example: 'public, max-age=60'}
+    ETag:
+      schema: {type: string}
+    RateLimitLimit:
+      schema: {type: integer}
+    RateLimitRemaining:
+      schema: {type: integer}
+    RateLimitReset:
+      description: Unix time at which the window resets.
+      schema: {type: integer}
+  responses:
+    BadRequest:
+      description: |
+        Invalid query or name. Messages used: `Invalid page.`, `Invalid name.`,
+        `Unknown category.`, `Unknown vocation.`, `Unknown protection.`, `Unknown world type.`,
+        `Invalid worlds.`, `Too many worlds.`, `Unknown fields.`, `Invalid grade.`,
+        `Unknown state.`, `Unknown type.`, `Unknown order.`, `Invalid house id.`, `Invalid level.`, `Invalid loyalty.`, `Unknown skill.`, `Invalid skill.`, `Invalid charges.`, `Invalid experience.`, `Invalid target level.`, `Pass level or experience.`, `Invalid hunt.`, `Duplicate member.`
+      headers:
+        X-API-Version:
+          $ref: '#/components/headers/XApiVersion'
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+        ETag:
+          $ref: '#/components/headers/ETag'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimitLimit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimitReset'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: {status_code: 400, message: Unknown vocation.}
+    TooManyRequests:
+      description: Rate limit of the current window.
+      headers:
+        X-API-Version:
+          $ref: '#/components/headers/XApiVersion'
+        RateLimit-Limit:
+          schema: {type: integer}
+        RateLimit-Remaining:
+          schema: {type: integer, example: 0}
+        RateLimit-Reset:
+          schema: {type: integer}
+        Retry-After:
+          schema: {type: integer, description: Seconds until a new attempt is allowed.}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: {status_code: 429, message: Rate limit exceeded.}
+    BadGateway:
+      description: Internal error that did not come with its own status. The body carries no HTML.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: {status_code: 502, message: Upstream request failed.}
+    UpstreamFailed:
+      description: |
+        Failure fetching or reading tibia.com. The response is closed. Generic message
+        `Upstream request failed.` An empty highscore can also respond 520 with
+        `Error when getting Hightscore ranks category: (...)`.
+      headers:
+        X-API-Version:
+          $ref: '#/components/headers/XApiVersion'
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+        ETag:
+          $ref: '#/components/headers/ETag'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimitLimit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimitReset'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: {status_code: 520, message: Upstream request failed.}
+    UpstreamBusy:
+      description: |
+        Every requested world was held back by the protection against blocking by tibia.com
+        (read ceiling or pause after 403/429/503). Try again after `Retry-After`. It also answers 503 `Tibia.com is under maintenance.` when every requested world fell into the tibia.com maintenance.
+      headers:
+        X-API-Version:
+          $ref: '#/components/headers/XApiVersion'
+        Cache-Control:
+          schema: {type: string, example: no-store}
+        Retry-After:
+          schema: {type: integer, description: Seconds until a new attempt is allowed.}
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimitLimit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimitReset'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: {status_code: 503, message: Upstream busy.}
+    GuildsNotFound:
+      description: "World tibia.com does not know (the selector does not show the requested world), unknown guild, or page out of the expected format."
+      headers:
+        X-API-Version:
+          $ref: '#/components/headers/XApiVersion'
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+        ETag:
+          $ref: '#/components/headers/ETag'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimitLimit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimitReset'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: {status_code: 404, message: Guilds data not found!}
+    HousesNotFound:
+      description: World or town tibia.com does not know (the search caption does not match), unknown house, or page out of the expected format.
+      headers:
+        X-API-Version:
+          $ref: '#/components/headers/XApiVersion'
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+        ETag:
+          $ref: '#/components/headers/ETag'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimitLimit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimitReset'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: {status_code: 404, message: Houses data not found!}
+    WikiNotFound:
+      description: "Unknown category, or no active item with this name in the category."
+      headers:
+        X-API-Version:
+          $ref: '#/components/headers/XApiVersion'
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+        ETag:
+          $ref: '#/components/headers/ETag'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimitLimit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimitReset'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: {status_code: 404, message: Not found.}
+    WikiUnavailable:
+      description: |
+        The leech database is not configured or does not answer, and there is no recent copy
+        to serve. `Retry-After` suggests when to try again.
+      headers:
+        X-API-Version:
+          $ref: '#/components/headers/XApiVersion'
+        Retry-After:
+          schema: {type: integer, example: 60}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: {status_code: 503, message: Wiki data unavailable.}
+    NotFound:
+      description: Route does not exist.
+      headers:
+        X-API-Version:
+          $ref: '#/components/headers/XApiVersion'
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+        ETag:
+          $ref: '#/components/headers/ETag'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimitLimit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimitReset'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: {status_code: 404, message: Not found.}
+    Maintenance:
+      description: "Tibia.com in maintenance (redirected to maintenance.tibia.com). The API does not call tibia.com for 5 minutes from the detection; Retry-After tells when to try again."
+      headers:
+        X-API-Version:
+          $ref: '#/components/headers/XApiVersion'
+        Retry-After:
+          schema: {type: integer, description: "Seconds until the next probe."}
+        Cache-Control:
+          schema: {type: string, example: no-store}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: {status_code: 503, message: 'Tibia.com is under maintenance.'}
+    NotModified:
+      description: The `If-None-Match` matches the ETag. No body.
+      headers:
+        ETag:
+          schema: {type: string}
+  schemas:
+    OnlineBatch:
+      type: object
+      required: [fetched_at, worlds, unknown, failed]
+      properties:
+        fetched_at: {type: string, format: date-time, description: UTC instant at which the response was built. Left out of the ETag.}
+        worlds:
+          type: array
+          description: In request order, without duplicates.
+          items: {$ref: '#/components/schemas/WorldOnline'}
+        unknown:
+          type: array
+          items: {type: string}
+          description: Requested worlds that do not exist, as they were sent.
+        failed:
+          type: array
+          items: {$ref: '#/components/schemas/WorldFailure'}
+    WorldOnline:
+      type: object
+      required: [name, players_online, updated_at, stale, online]
+      properties:
+        name: {type: string, description: Canonical world name.}
+        players_online: {type: integer, description: Size of `online`.}
+        updated_at: {type: string, format: date-time, description: "Read of the list on tibia.com, in UTC. Left out of the ETag."}
+        stale: {type: boolean, description: True when the new read failed and the last good list was returned (up to 5 min).}
+        online:
+          type: array
+          description: Alphabetical order, case-insensitive. NBSP becomes a space. With `fields=names`, names only.
+          items:
+            oneOf:
+              - {type: string}
+              - {$ref: '#/components/schemas/OnlinePlayer'}
+    WorldFailure:
+      type: object
+      required: [name, status_code, message]
+      description: World with no list at all to return. 520 `Upstream request failed.` when tibia.com failed; 503 `Upstream busy.` when the protection held the read back.
+      properties:
+        name: {type: string}
+        status_code: {type: integer, enum: [503, 520]}
+        message: {type: string}
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [status_code, message]
+          properties:
+            status_code: {type: integer}
+            message: {type: string}
+    Share:
+      type: object
+      required: [min, max]
+      properties:
+        min: {type: integer}
+        max: {type: integer}
+    Title:
+      type: object
+      required: [title, unlockeds]
+      properties:
+        title: {type: string}
+        unlockeds: {type: integer}
+    Guild:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+        rank: {type: string}
+    House:
+      type: object
+      required: [house]
+      properties:
+        house: {type: string, description: "Name and town, such as `Targuna Cottage  1 (Thais)`."}
+        paid_until: {type: string, format: date, description: Date YYYY-MM-DD.}
+    CharacterInfo:
+      type: object
+      required: [name, level, share_experience]
+      properties:
+        name: {type: string}
+        former_names: {type: array, items: {type: string}}
+        former_worlds: {type: array, items: {type: string}}
+        level: {type: integer}
+        share_experience:
+          $ref: '#/components/schemas/Share'
+        title:
+          $ref: '#/components/schemas/Title'
+        sex: {type: string}
+        vocation: {type: string}
+        achievement_points: {type: integer}
+        world: {type: string}
+        residence: {type: string}
+        married: {type: string}
+        houses: {type: array, items: {$ref: '#/components/schemas/House'}}
+        guild:
+          $ref: '#/components/schemas/Guild'
+        last_login: {type: string, format: date-time}
+        comment: {type: string}
+        account_status: {type: string}
+    Achievement:
+      type: object
+      required: [name, secret, grade]
+      properties:
+        name: {type: string}
+        secret:
+          type: boolean
+          description: True when the name is missing, is ????, or the secret achievement image is on the row.
+        grade: {type: integer}
+    Badge:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+        description: {type: string}
+        icon: {type: string, description: Image URL on the page. The API does not download the file.}
+    Account:
+      type: object
+      properties:
+        loyalty_title: {type: string}
+        created: {type: string, format: date-time}
+    Alt:
+      type: object
+      required: [index, name, main]
+      properties:
+        index: {type: integer}
+        name: {type: string}
+        world: {type: string}
+        status: {type: string}
+        main: {type: boolean}
+    Killer:
+      type: object
+      required: [name, player, traded]
+      properties:
+        name: {type: string}
+        player: {type: boolean}
+        traded: {type: boolean}
+    Death:
+      type: object
+      required: [time, level, reason, killers]
+      properties:
+        time: {type: string, format: date-time}
+        level: {type: integer}
+        reason: {type: string}
+        killers: {type: array, items: {$ref: '#/components/schemas/Killer'}}
+    Character:
+      type: object
+      required: [character_information, deaths]
+      properties:
+        character_information:
+          $ref: '#/components/schemas/CharacterInfo'
+        account_badges: {type: array, items: {$ref: '#/components/schemas/Badge'}}
+        account_achievements: {type: array, items: {$ref: '#/components/schemas/Achievement'}}
+        account_information:
+          $ref: '#/components/schemas/Account'
+        deaths: {type: array, items: {$ref: '#/components/schemas/Death'}}
+        characters: {type: array, items: {$ref: '#/components/schemas/Alt'}}
+    Rank:
+      type: object
+      required: [rank, name, level, value]
+      properties:
+        rank: {type: integer}
+        name: {type: string}
+        title: {type: string}
+        vocation: {type: string}
+        world: {type: string}
+        level: {type: integer}
+        value: {type: integer}
+    Highscores:
+      type: object
+      required: [page, last_update, category, rank_list_size, rank_list]
+      properties:
+        page: {type: integer}
+        last_update: {type: string, format: date-time}
+        category: {type: string}
+        rank_list_size: {type: integer}
+        world: {type: string}
+        rank_list: {type: array, items: {$ref: '#/components/schemas/Rank'}}
+    HighscorePage:
+      type: object
+      required: [highscores]
+      properties:
+        highscores:
+          $ref: '#/components/schemas/Highscores'
+    RankHit:
+      type: object
+      required: [rank, level, value]
+      properties:
+        rank: {type: integer}
+        level: {type: integer}
+        value: {type: integer}
+    HighscoreCategory:
+      type: string
+      default: experience
+      enum:
+        - achievements
+        - axefighting
+        - charmpoints
+        - clubfighting
+        - distancefighting
+        - experience
+        - fishing
+        - fistfighting
+        - goshnarstaint
+        - loyaltypoints
+        - magiclevel
+        - shielding
+        - swordfighting
+        - dromescore
+        - bosspoints
+        - bountypointsearned
+        - weeklytaskscompleted
+        - phosphorusrecord
+    VocationFilter:
+      type: string
+      default: all
+      enum: [all, none, knights, paladins, sorcerers, druids, monks]
+    Protection:
+      type: string
+      default: any
+      enum: [any, unprotected, protected, initially_protected]
+    WorldType:
+      type: string
+      enum: [open_pvp, optional_pvp, hardcore_pvp, retro_open_pvp, retro_hardcore_pvp]
+    WorldRecord:
+      type: object
+      required: [value]
+      properties:
+        value: {type: integer}
+        date: {type: string, format: date-time}
+    WorldSummary:
+      type: object
+      required: [name, players_online, location, type, battleye, info]
+      properties:
+        name: {type: string}
+        players_online: {type: integer}
+        location: {type: string}
+        type: {type: string}
+        battleye: {type: string, description: Green when the image is the initial one; otherwise Yellow.}
+        info:
+          type: array
+          items: {type: string}
+          description: Additional Information split by commas. Empty when the cell has no text.
+    WorldList:
+      type: object
+      required: [players_online, worlds_count, record_players, regular_worlds]
+      properties:
+        players_online: {type: integer}
+        worlds_count: {type: integer}
+        record_players:
+          $ref: '#/components/schemas/WorldRecord'
+        regular_worlds: {type: array, items: {$ref: '#/components/schemas/WorldSummary'}}
+    OnlinePlayer:
+      type: object
+      required: [name, level, share_experience, vocation]
+      properties:
+        name: {type: string}
+        level: {type: integer}
+        share_experience:
+          $ref: '#/components/schemas/Share'
+        vocation: {type: string}
+    WorldDetail:
+      type: object
+      required: [name, players_online, online_players]
+      properties:
+        name: {type: string}
+        status: {type: string}
+        players_online: {type: integer}
+        world_record:
+          type: object
+          required: [record_players]
+          description: Peak of online players in this world.
+          properties:
+            record_players: {type: integer}
+            on_date:
+              type: string
+              format: date-time
+              description: UTC instant of the peak. The page's time is read in Europe/Berlin.
+        creation_date: {type: string}
+        location: {type: string}
+        pvp_type: {type: string}
+        world_quest_titles:
+          type: array
+          items: {type: string}
+          description: Titles split by commas. Empty when the cell has no text.
+        battleye_status:
+          type: object
+          required: [protected]
+          properties:
+            protected: {type: boolean}
+            since:
+              type: string
+              format: date
+              description: Day written in the sentence, YYYY-MM-DD. Missing when the sentence has no date.
+        game_world_type: {type: string}
+        premium_type: {type: string}
+        transfer_type: {type: string}
+        online_players: {type: array, items: {$ref: '#/components/schemas/OnlinePlayer'}}
+    RotationNow:
+      type: object
+      required: [ends_on, ends_in, rotation]
+      properties:
+        ends_on:
+          type: string
+          format: date-time
+          description: 10:00 from the page text, in Europe/Berlin, converted to UTC.
+        ends_in:
+          type: object
+          required: [days, hours, minutes]
+          description: Time left until ends_on. Seconds are dropped. A past deadline stays at zero.
+          properties:
+            days: {type: integer}
+            hours: {type: integer}
+            minutes: {type: integer}
+        rotation: {type: integer}
+    RotationPast:
+      type: object
+      required: [closed_on, rotation]
+      properties:
+        closed_on: {type: string, format: date-time}
+        rotation: {type: integer}
+    Rotations:
+      type: object
+      required: [current, past]
+      properties:
+        current:
+          $ref: '#/components/schemas/RotationNow'
+        past:
+          $ref: '#/components/schemas/RotationPast'
+    DromeRow:
+      type: object
+      required: [rank, name, drome_level]
+      properties:
+        rank: {type: integer}
+        name: {type: string}
+        drome_level: {type: integer}
+    DromeRank:
+      type: object
+      required: [world, rotation, page, last_update, rotations, rank]
+      properties:
+        world: {type: string}
+        rotation: {type: integer}
+        page: {type: integer}
+        last_update: {type: string, format: date-time}
+        rotations: {type: array, items: {type: integer}}
+        rank: {type: array, items: {$ref: '#/components/schemas/DromeRow'}}
+    PointRange:
+      type: object
+      required: [min, max]
+      description: Points range of the grade, read from the page legend.
+      properties:
+        min: {type: integer}
+        max: {type: integer}
+    LibraryAchievement:
+      type: object
+      required: [name, grade, points, description]
+      properties:
+        name: {type: string}
+        grade: {type: integer, minimum: 1, maximum: 4}
+        points:
+          $ref: '#/components/schemas/PointRange'
+        description: {type: string, description: "Text from the page, with whitespace normalised."}
+    AchievementList:
+      type: object
+      required: [count, secret_count, achievements]
+      properties:
+        count:
+          type: integer
+          description: Number of items in achievements, after the filter.
+        secret_count:
+          type: integer
+          description: Secret achievements announced by the page. Does not change with the filter.
+        achievements: {type: array, items: {$ref: '#/components/schemas/LibraryAchievement'}}
+    Boss:
+      type: object
+      required: [name, image, boosted]
+      properties:
+        name: {type: string}
+        image: {type: string}
+        boosted: {type: boolean}
+    Bosses:
+      type: object
+      required: [boosted, boostable_count, updated_at, stale, boostable_bosses]
+      properties:
+        boosted:
+          $ref: '#/components/schemas/Boss'
+        boostable_count: {type: integer}
+        updated_at: {type: string, format: date-time, description: "UTC instant at which the page was read from tibia.com."}
+        stale: {type: boolean, description: "True when the cache serves the page past its scheduled refresh, because the read failed (tibia.com maintenance, for one). updated_at shows its age."}
+        boostable_bosses: {type: array, items: {$ref: '#/components/schemas/Boss'}}
+    Creature:
+      type: object
+      required: [name, race, image]
+      properties:
+        name: {type: string}
+        race: {type: string}
+        image: {type: string}
+        summary:
+          type: string
+          description: Story from a race's page, without the status paragraphs. Missing in the general list.
+        creature_status:
+          $ref: '#/components/schemas/CreatureStatus'
+    CreatureStatus:
+      type: object
+      description: |
+        Status read from the hitpoints and experience paragraphs. Missing in the general list.
+        summonable and convinceable can differ. They carry nothing leaves loot empty.
+        paralysable is false only when the page says the creature cannot be paralysed.
+        sees_invisible is true only when the page says the creature senses invisible creatures.
+      required: [hitpoints, experience, loot, sometimes_other_items, immune, strong, weak, paralysable, summonable, convinceable, mana, sees_invisible]
+      properties:
+        hitpoints: {type: integer}
+        experience: {type: integer}
+        loot:
+          type: array
+          description: Items mentioned. Empty when the page says the creature carries nothing.
+          items: {type: string}
+        sometimes_other_items: {type: boolean}
+        immune: {type: array, items: {type: string}}
+        strong: {type: array, items: {type: string}}
+        weak: {type: array, items: {type: string}}
+        paralysable: {type: boolean}
+        summonable: {type: boolean}
+        convinceable: {type: boolean}
+        mana:
+          type: integer
+          description: Mana to summon or convince. Zero when neither is possible.
+        sees_invisible: {type: boolean}
+    Creatures:
+      type: object
+      required: [count, boosted, updated_at, stale, creatures]
+      properties:
+        count:
+          type: integer
+          description: Number of creatures in creatures. On a race page, it is 1.
+        boosted:
+          type: object
+          required: [name, race]
+          properties:
+            name: {type: string}
+            race: {type: string}
+        updated_at: {type: string, format: date-time, description: "UTC instant at which the page was read from tibia.com."}
+        stale: {type: boolean, description: "True when the cache serves the page past its scheduled refresh, because the read failed (tibia.com maintenance, for one). updated_at shows its age."}
+        creatures: {type: array, items: {$ref: '#/components/schemas/Creature'}}
+    ExperienceTable:
+      type: object
+      required: [max_level, updated_at, stale, experience_table]
+      properties:
+        max_level:
+          type: object
+          description: Last level exposed in the table. The ceiling rises when the Tibia page starts listing a higher level.
+          required: [level, experience]
+          properties:
+            level: {type: integer, example: 3500}
+            experience: {type: integer, format: int64, example: 713359324800}
+        updated_at: {type: string, format: date-time, description: "UTC instant at which the page was read from tibia.com."}
+        stale: {type: boolean, description: "True when the cache serves the page past its scheduled refresh, because the read failed (tibia.com maintenance, for one). updated_at shows its age."}
+        experience_table:
+          type: array
+          items:
+            type: object
+            required: [level, experience]
+            properties:
+              level: {type: integer}
+              experience: {type: integer, format: int64}
+    SpellList:
+      type: object
+      required: [count, updated_at, stale, spells]
+      properties:
+        count:
+          type: integer
+          description: Number of items in spells.
+        updated_at: {type: string, format: date-time, description: "UTC instant at which the page was read from tibia.com."}
+        stale: {type: boolean, description: "True when the cache serves the page past its scheduled refresh, because the read failed (tibia.com maintenance, for one). updated_at shows its age."}
+        spells:
+          type: array
+          items:
+            type: object
+            required: [name, spell, words, group, type, level, mana, premium]
+            properties:
+              name: {type: string, example: Light Healing}
+              spell: {type: string, description: Slug of the spell's link., example: lighthealing}
+              words: {type: string, example: exura}
+              group: {type: string, example: Healing}
+              type: {type: string, example: Instant}
+              level:
+                type: integer
+                nullable: true
+                description: Exp Lvl from the page. null when the cell is "-".
+                example: 8
+              mana:
+                description: A number, or "variable" when the page cell is "var.".
+                oneOf:
+                  - type: integer
+                    example: 20
+                  - type: string
+                    enum: [variable]
+              magic_type:
+                type: string
+                description: Magic Type from the page. "var." becomes "variable".
+              premium: {type: boolean, example: false}
+              image: {type: string, description: Present on a spell's page.}
+              summary: {type: string, description: Story of the spell. Present on a spell's page.}
+              vocations:
+                type: array
+                items: {type: string}
+                description: Vocations that learn the spell.
+              cooldown:
+                type: object
+                required: [seconds, group_seconds]
+                properties:
+                  seconds: {type: integer, example: 2}
+                  group_seconds: {type: integer, example: 2}
+              soul_points: {type: integer, description: Present when the page has Soul Points.}
+              amount: {type: integer, description: Present when the page has Amount.}
+              rune:
+                type: object
+                description: Rune Information. Only included for runes.
+                required: [vocations, group, level, magic_level]
+                properties:
+                  vocations:
+                    type: array
+                    items: {type: string}
+                  group: {type: string, example: Support}
+                  level:
+                    type: integer
+                    nullable: true
+                  magic_level: {type: integer, example: 4}
+    WorldQuestRank:
+      type: object
+      required: [rank, date, worlds]
+      description: "Worlds that finished on the same day. The rank is the page one: the next group starts at the position after this group's last world."
+      properties:
+        rank: {type: integer, minimum: 1}
+        date: {type: string, format: date}
+        worlds: {type: array, items: {type: string}}
+    WorldQuest:
+      type: object
+      required: [name, type, description]
+      properties:
+        name: {type: string}
+        type: {type: string, enum: [event, task]}
+        status:
+          type: string
+          enum: [running, upcoming]
+          description: Events only. running while it is on; upcoming while it has not started yet.
+        description: {type: string}
+        begins_on: {type: string, format: date, description: "Start of the next event, while it has not started yet."}
+        ends_on: {type: string, format: date, description: End of the running event.}
+        worlds_successful:
+          type: array
+          description: Detail only. Worlds that completed the quest.
+          items: {$ref: '#/components/schemas/WorldQuestRank'}
+        worlds_trying:
+          type: array
+          description: Detail only. Worlds still trying, for the running event.
+          items: {type: string}
+        worlds_failed:
+          type: array
+          description: Detail only. Worlds that failed.
+          items: {$ref: '#/components/schemas/WorldQuestRank'}
+    WorldQuestList:
+      type: object
+      required: [count, world_quests]
+      properties:
+        count:
+          type: integer
+          description: Number of items in world_quests. On the detail, it is 1.
+        world_quests: {type: array, items: {$ref: '#/components/schemas/WorldQuest'}}
+    MapArea:
+      type: object
+      required: [name, region, location]
+      properties:
+        name: {type: string}
+        region: {type: string, description: Slug of the area link.}
+        location: {type: string, description: "Page region, such as Main Continent, Zao or Islands."}
+        category: {type: string, description: "Sub-region, such as Cities or Isles. Missing when the page has none."}
+        image: {type: string, description: Detail only. Area map on static.tibia.com.}
+        description: {type: string, description: "Detail only. Page paragraphs, separated by a blank line."}
+    MapList:
+      type: object
+      required: [count, maps]
+      properties:
+        count:
+          type: integer
+          description: Number of items in maps. On the detail, it is 1.
+        image: {type: string, description: List only. World map of the page.}
+        maps: {type: array, items: {$ref: '#/components/schemas/MapArea'}}
+    KillCount:
+      type: object
+      required: [killed_players, killed_by_players]
+      properties:
+        killed_players: {type: integer, description: Players killed by the race.}
+        killed_by_players: {type: integer, description: Creatures of the race killed by players.}
+    KillPeriods:
+      type: object
+      required: [last_day, last_week]
+      properties:
+        last_day:
+          $ref: '#/components/schemas/KillCount'
+        last_week:
+          $ref: '#/components/schemas/KillCount'
+    KillEntry:
+      type: object
+      required: [race, last_day, last_week]
+      properties:
+        race: {type: string, description: "Race as the page writes it, such as Dragon or (elemental forces)."}
+        last_day:
+          $ref: '#/components/schemas/KillCount'
+        last_week:
+          $ref: '#/components/schemas/KillCount'
+    KillStatistics:
+      type: object
+      required: [world, count, entries, total]
+      properties:
+        world: {type: string, description: Canonical world name.}
+        count:
+          type: integer
+          description: Number of items in entries, without the Total row.
+        entries: {type: array, items: {$ref: '#/components/schemas/KillEntry'}}
+        total:
+          allOf:
+            - $ref: '#/components/schemas/KillPeriods'
+          description: Total row of the page.
+    HouseAuction:
+      type: object
+      required: [current_bid]
+      properties:
+        current_bid: {type: integer, nullable: true, description: Highest bid in gold. null while there is no bid.}
+        time_left: {type: string, description: "Time left as the page writes it, such as 4 days."}
+    HouseRow:
+      type: object
+      required: [house_id, name, size, rent, status]
+      properties:
+        house_id: {type: integer}
+        name: {type: string}
+        size: {type: integer, description: Square meters.}
+        rent: {type: integer, description: Monthly rent in gold.}
+        status: {type: string, enum: [rented, auctioned]}
+        auction:
+          $ref: '#/components/schemas/HouseAuction'
+    HouseList:
+      type: object
+      required: [world, town, type, count, houses]
+      properties:
+        world: {type: string}
+        town: {type: string, description: Town as tibia.com spells it.}
+        type: {type: string, enum: [houses, guildhalls]}
+        count: {type: integer, description: Number of items in houses.}
+        houses: {type: array, items: {$ref: '#/components/schemas/HouseRow'}}
+    HouseRental:
+      type: object
+      required: [owner, paid_until]
+      properties:
+        owner: {type: string}
+        paid_until: {type: string, format: date-time, description: "Until when the rent is paid, in UTC."}
+    HouseBid:
+      type: object
+      description: Running auction. Empty while there is no bid.
+      properties:
+        ends_at: {type: string, format: date-time}
+        current_bid: {type: integer}
+        bidder: {type: string}
+    HouseStatus:
+      type: object
+      required: [text]
+      description: Status paragraph of the page. state and the structured fields come only for the known formats.
+      properties:
+        state: {type: string, enum: [rented, auctioned]}
+        text: {type: string, description: "The whole paragraph, always present."}
+        rental:
+          $ref: '#/components/schemas/HouseRental'
+        auction:
+          $ref: '#/components/schemas/HouseBid'
+    HouseDetail:
+      type: object
+      required: [house_id, world, name, type, beds, size, rent, status]
+      properties:
+        house_id: {type: integer}
+        world: {type: string}
+        name: {type: string}
+        type: {type: string, enum: [house, guildhall]}
+        image: {type: string, description: House image on static.tibia.com.}
+        beds: {type: integer}
+        restriction: {type: string, description: "Restriction from the page, such as Only Sorcerers can enter."}
+        size: {type: integer, description: Square meters.}
+        rent: {type: integer, description: Monthly rent in gold.}
+        status:
+          $ref: '#/components/schemas/HouseStatus'
+    GuildSummary:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+        logo: {type: string, description: "Logo on static.tibia.com."}
+        description: {type: string, description: "Description from the list, when the guild has one."}
+    GuildList:
+      type: object
+      required: [world, count, active, in_formation]
+      properties:
+        world: {type: string}
+        count: {type: integer, description: "Sum of active and in_formation."}
+        active: {type: array, items: {$ref: '#/components/schemas/GuildSummary'}}
+        in_formation: {type: array, items: {$ref: '#/components/schemas/GuildSummary'}}
+    GuildDisband:
+      type: object
+      required: [date, text]
+      properties:
+        date: {type: string, format: date}
+        text: {type: string, description: "The whole warning sentence, with the condition."}
+    GuildHall:
+      type: object
+      required: [name, world, paid_until]
+      properties:
+        name: {type: string}
+        world: {type: string}
+        paid_until: {type: string, format: date}
+    GuildMember:
+      type: object
+      required: [rank, name, vocation, level, joined, online]
+      properties:
+        rank: {type: string, description: "Rank of the member. The page leaves the rank blank for whoever shares the rank above; here it repeats."}
+        name: {type: string}
+        title: {type: string, description: "Title of the member, without the parentheses."}
+        vocation: {type: string}
+        level: {type: integer}
+        joined: {type: string, format: date}
+        online: {type: boolean}
+    GuildInvite:
+      type: object
+      required: [name, date]
+      properties:
+        name: {type: string}
+        date: {type: string, format: date}
+    GuildDetail:
+      type: object
+      required: [name, world, founded, status, status_text, applications_open, members_count, online_count, members, invited]
+      properties:
+        name: {type: string}
+        world: {type: string, description: "World of the founding sentence."}
+        logo: {type: string}
+        description: {type: string, description: "Free text of the guild, before the founding sentence."}
+        homepage: {type: string, description: "Text of the sentence \"The official homepage is at ...\", written by the guild. Not validated: treat it as text, not as a trusted link."}
+        founded: {type: string, format: date}
+        status: {type: string, enum: [active, in_formation]}
+        status_text: {type: string, description: "Status sentence as the page writes it, including the leadership warning."}
+        applications_open: {type: boolean}
+        disband:
+          $ref: '#/components/schemas/GuildDisband'
+        guildhall:
+          $ref: '#/components/schemas/GuildHall'
+        other:
+          type: array
+          items: {type: string}
+          description: "Information sentences the parser does not recognise. Missing when there are none."
+        members_count: {type: integer}
+        online_count: {type: integer}
+        members: {type: array, items: {$ref: '#/components/schemas/GuildMember'}}
+        invited: {type: array, items: {$ref: '#/components/schemas/GuildInvite'}}
+    ActivePoll:
+      type: object
+      required: [id, topic, ends_on]
+      properties:
+        id: {type: integer, description: "questionaireid of the poll on tibia.com. The details need a login there."}
+        topic: {type: string}
+        ends_on: {type: string, format: date}
+    ClosedPoll:
+      type: object
+      required: [id, topic, ended_on]
+      properties:
+        id: {type: integer, description: "questionaireid of the poll on tibia.com. The details need a login there."}
+        topic: {type: string}
+        ended_on: {type: string, format: date}
+    ClosedPolls:
+      type: object
+      required: [page, total_pages, total, polls]
+      properties:
+        page: {type: integer}
+        total_pages: {type: integer, description: "Number of pages of closed polls."}
+        total: {type: integer, description: "Number of closed polls, as the page states."}
+        polls: {type: array, items: {$ref: '#/components/schemas/ClosedPoll'}}
+    Polls:
+      type: object
+      required: [active, closed]
+      properties:
+        active:
+          type: array
+          description: "Open polls. The same on every page."
+          items: {$ref: '#/components/schemas/ActivePoll'}
+        closed:
+          $ref: '#/components/schemas/ClosedPolls'
+    Fansite:
+      type: object
+      required: [name, url, contact, content, social_media, languages, specials]
+      properties:
+        name: {type: string}
+        url: {type: string, description: "Fansite link. Only http or https; a row with another scheme is left out. External link: open it with rel=noopener."}
+        logo: {type: string, description: "Logo on static.tibia.com."}
+        contact: {type: string, description: "Contact character of the fansite."}
+        content: {type: array, items: {type: string}, description: "Content types, such as Statistics, Texts, Tools or Wiki."}
+        social_media: {type: array, items: {type: string}, description: "Social media, such as Discord, Instagram or Youtube. Only the label, no link."}
+        languages: {type: array, items: {type: string}, description: "Language codes, such as en or pt."}
+        specials: {type: array, items: {type: string}, description: "Specials of the fansite, as the page writes them."}
+        item: {type: string, description: "Image of the fansite item on static.tibia.com. Missing when the fansite has none."}
+    Fansites:
+      type: object
+      required: [count, updated_at, stale, promoted, supported]
+      properties:
+        count: {type: integer, description: "Sum of promoted and supported."}
+        updated_at: {type: string, format: date-time, description: "UTC instant at which the list was read from tibia.com."}
+        stale: {type: boolean, description: "True when the cache serves the list past its scheduled refresh, because the read failed (tibia.com maintenance, for one). updated_at shows its age."}
+        promoted: {type: array, items: {$ref: '#/components/schemas/Fansite'}}
+        supported: {type: array, items: {$ref: '#/components/schemas/Fansite'}}
+    Online:
+      type: object
+      required: [name, level, share_experience, vocation, online]
+      properties:
+        name: {type: string}
+        level: {type: integer}
+        share_experience:
+          $ref: '#/components/schemas/Share'
+        vocation: {type: string}
+        online: {type: boolean}
+    ShareLevel:
+      type: object
+      description: "Level and its share experience range, as in the character profile."
+      required: [level, share_experience]
+      properties:
+        level: {type: integer}
+        share_experience:
+          $ref: '#/components/schemas/Share'
+    ShareExperience:
+      type: object
+      required: [levels, party]
+      properties:
+        levels: {type: array, items: {$ref: '#/components/schemas/ShareLevel'}}
+        party:
+          type: object
+          description: "lowest and highest are the extremes of the party. shared_range is the overlap of every range and is left out when there is none. can_share is true when every level is inside shared_range."
+          required: [lowest, highest, can_share]
+          properties:
+            lowest: {type: integer}
+            highest: {type: integer}
+            can_share: {type: boolean}
+            shared_range:
+              $ref: '#/components/schemas/Share'
+    Regen:
+      type: object
+      description: "points come back every seconds."
+      required: [points, seconds]
+      properties:
+        points: {type: integer}
+        seconds: {type: integer}
+    VocationRegen:
+      type: object
+      description: "Life and mana regeneration."
+      required: [life, mana]
+      properties:
+        life: {$ref: '#/components/schemas/Regen'}
+        mana: {$ref: '#/components/schemas/Regen'}
+    VocationStatus:
+      type: object
+      description: "Status of a vocation at a level. regeneration is the one without promotion."
+      required: [vocation, level, hitpoints, mana, capacity, regeneration, promoted]
+      properties:
+        vocation: {type: string, example: Knight}
+        level: {type: integer}
+        hitpoints: {type: integer}
+        mana: {type: integer}
+        capacity:
+          type: object
+          description: "Capacity, and the capacity with the basic, intricate and powerful capacity imbuement."
+          required: [base, basic_imbuement, intricate_imbuement, powerful_imbuement]
+          properties:
+            base: {type: integer}
+            basic_imbuement: {type: integer}
+            intricate_imbuement: {type: integer}
+            powerful_imbuement: {type: integer}
+        regeneration: {$ref: '#/components/schemas/VocationRegen'}
+        promoted:
+          type: object
+          description: "What changes with the promotion: the name and the regeneration."
+          required: [name, regeneration]
+          properties:
+            name: {type: string, example: Elite Knight}
+            regeneration: {$ref: '#/components/schemas/VocationRegen'}
+    SkillState:
+      type: object
+      description: "level, how much is left to the next level in percent, and the skill points it stands for."
+      required: [level, percent_left, points]
+      properties:
+        level: {type: integer}
+        percent_left: {type: number}
+        points: {type: number}
+    RawSkills:
+      type: object
+      description: "Raw skill calculation. loyalty.points is there only when the call sent loyalty_points."
+      required: [vocation, loyalty, skills]
+      properties:
+        vocation: {type: string, example: Knight}
+        loyalty:
+          type: object
+          required: [bonus]
+          properties:
+            bonus: {type: integer}
+            points: {type: integer}
+        skills:
+          type: array
+          items:
+            type: object
+            required: [skill, online, raw]
+            properties:
+              skill: {type: string, enum: [magic, fist, club, sword, axe, distance, shielding, fishing]}
+              online: {$ref: '#/components/schemas/SkillState'}
+              raw: {$ref: '#/components/schemas/SkillState'}
+    ExerciseTime:
+      type: object
+      description: "Time to spend exercise weapon charges. formatted is HH:MM:SS, with as many hour digits as needed."
+      required: [charges, total_seconds, duration, formatted]
+      properties:
+        charges: {type: integer, format: int64}
+        total_seconds: {type: integer, format: int64}
+        duration:
+          type: object
+          required: [hours, minutes, seconds]
+          properties:
+            hours: {type: integer, format: int64}
+            minutes: {type: integer}
+            seconds: {type: integer}
+        formatted: {type: string, example: '08:00:00'}
+    LevelExperience:
+      type: object
+      description: "Experience a level needs. The next level fields are left out at level 821009."
+      required: [level, experience]
+      properties:
+        level: {type: integer}
+        experience: {type: integer, format: int64}
+        next_level_experience: {type: integer, format: int64}
+        to_next_level: {type: integer, format: int64}
+    ExperienceStatus:
+      type: object
+      description: "Level of an amount of experience. progress goes from 0 to 1; the next level fields are left out at level 821009."
+      required: [experience, level, exact_level, level_experience, progress]
+      properties:
+        experience: {type: integer, format: int64}
+        level: {type: integer}
+        exact_level: {type: number, format: double}
+        level_experience: {type: integer, format: int64}
+        next_level_experience: {type: integer, format: int64}
+        to_next_level: {type: integer, format: int64}
+        progress: {type: number, format: double, minimum: 0, maximum: 1}
+    RashidStop:
+      type: object
+      description: "City where Rashid stays on a weekday, with the map on TibiaWiki BR."
+      required: [weekday, city, image]
+      properties:
+        weekday: {type: string, enum: [sunday, monday, tuesday, wednesday, thursday, friday, saturday]}
+        city: {type: string, example: Carlin}
+        image: {type: string, format: uri}
+    RashidLocation:
+      type: object
+      description: "Rashid's city in the current game day, the server saves around it (UTC) and the weekly schedule."
+      required: [city, weekday, image, since, until, schedule]
+      properties:
+        city: {type: string, example: Svargrond}
+        weekday: {type: string, enum: [sunday, monday, tuesday, wednesday, thursday, friday, saturday]}
+        image: {type: string, format: uri}
+        since: {type: string, format: date-time}
+        until: {type: string, format: date-time}
+        schedule:
+          type: array
+          minItems: 7
+          maxItems: 7
+          items:
+            $ref: '#/components/schemas/RashidStop'
+    WikiCategory:
+      type: object
+      description: "An item category, with its slug, English name and group."
+      required: [slug, name, group]
+      properties:
+        slug: {type: string, example: axes}
+        name: {type: string, example: Axes}
+        group: {type: string, enum: [weapons, equipment, consumables, tools, loot, decoration, other]}
+    WikiCategoryCount:
+      description: "A category and how many active items it has."
+      allOf:
+        - $ref: '#/components/schemas/WikiCategory'
+        - type: object
+          required: [count]
+          properties:
+            count: {type: integer}
+    WikiCategoryList:
+      type: object
+      description: "The catalog of categories and the total of active items."
+      required: [categories, total]
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/WikiCategoryCount'
+        total: {type: integer}
+    WikiItemList:
+      type: object
+      description: "Basic data of the items of a category, by name."
+      required: [category, count, items]
+      properties:
+        category:
+          $ref: '#/components/schemas/WikiCategory'
+        count: {type: integer}
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WikiItemSummary'
+    WikiItemSummary:
+      type: object
+      description: "Basic data of an item. Fields without a value are left out."
+      required: [name, type, image_url, wiki_url]
+      properties:
+        name: {type: string}
+        type: {type: string, nullable: true, description: "Type on TibiaWiki BR, in Portuguese."}
+        level_required: {type: integer}
+        vocations: {type: array, items: {type: string}}
+        attack: {type: integer}
+        defense: {type: integer}
+        armor: {type: integer}
+        weight: {type: number, format: double}
+        image_url: {type: string, nullable: true, format: uri}
+        wiki_url: {type: string, format: uri}
+    WikiNamedValue:
+      type: object
+      description: "A skill boost or a resistance (value in percent)."
+      required: [name, value]
+      properties:
+        name: {type: string, example: Magic Level}
+        value: {type: integer, example: 2}
+    WikiRune:
+      type: object
+      description: "How a rune is made and used (Infobox Runas)."
+      required: [words, magic_level, mana, soul, charges, make_vocations, damage_type]
+      properties:
+        words: {type: string, nullable: true}
+        magic_level: {type: integer, nullable: true}
+        mana: {type: integer, nullable: true}
+        soul: {type: integer, nullable: true}
+        charges: {type: integer, nullable: true}
+        make_vocations: {type: array, items: {type: string}}
+        damage_type: {type: string, nullable: true}
+    WikiItem:
+      type: object
+      description: "Everything the wiki says about an item: known fields in English, the rest in attributes."
+      required: [category, name, title, class, type, subtype, level_required, vocations, weight, attack, defense, defense_mod, armor, hands, element_attack, skill_boosts, resistances, classification, max_tier, imbuement_slots, perks, dropped_by, value, npc_price, buy_from, sell_to, stackable, enchantable, implemented, notes, attributes, image_url, wiki_url, updated_at]
+      properties:
+        category:
+          $ref: '#/components/schemas/WikiCategory'
+        name: {type: string}
+        title: {type: string}
+        class: {type: string, nullable: true}
+        type: {type: string, nullable: true, description: "Type on TibiaWiki BR, in Portuguese."}
+        subtype: {type: string, nullable: true}
+        level_required: {type: integer, nullable: true}
+        vocations: {type: array, items: {type: string}}
+        weight: {type: number, nullable: true, format: double}
+        attack: {type: integer, nullable: true}
+        defense: {type: integer, nullable: true}
+        defense_mod: {type: integer, nullable: true}
+        armor: {type: integer, nullable: true}
+        hands: {type: integer, nullable: true, enum: [1, 2]}
+        element_attack:
+          type: object
+          nullable: true
+          required: [element, value]
+          properties:
+            element: {type: string, example: Fire}
+            value: {type: integer, example: 44}
+        skill_boosts:
+          type: array
+          items:
+            $ref: '#/components/schemas/WikiNamedValue'
+        resistances:
+          type: array
+          items:
+            $ref: '#/components/schemas/WikiNamedValue'
+        classification: {type: integer, nullable: true}
+        max_tier: {type: integer, nullable: true}
+        imbuement_slots: {type: integer, nullable: true}
+        perks: {type: array, items: {type: string}}
+        dropped_by: {type: array, items: {type: string}}
+        value: {type: string, nullable: true}
+        npc_price: {type: integer, nullable: true, format: int64}
+        buy_from: {type: string, nullable: true}
+        sell_to: {type: string, nullable: true}
+        stackable: {type: boolean, nullable: true}
+        enchantable: {type: boolean, nullable: true}
+        rune:
+          $ref: '#/components/schemas/WikiRune'
+        implemented: {type: string, nullable: true}
+        notes: {type: string, nullable: true}
+        attributes:
+          type: object
+          description: "Other infobox fields, with the original keys and texts."
+          additionalProperties: {type: string}
+        image_url: {type: string, nullable: true, format: uri}
+        wiki_url: {type: string, format: uri}
+        updated_at: {type: string, format: date-time}
+    ExperienceGoal:
+      type: object
+      description: "Experience left from a start to a target level. progress goes from 0 to 1; reached is true when nothing is left."
+      required: [level, experience, target_level, target_experience, needed_experience, progress, reached]
+      properties:
+        level: {type: integer}
+        experience: {type: integer, format: int64}
+        target_level: {type: integer}
+        target_experience: {type: integer, format: int64}
+        needed_experience: {type: integer, format: int64}
+        progress: {type: number, format: double, minimum: 0, maximum: 1}
+        reached: {type: boolean}
+    HuntMember:
+      type: object
+      required: [name, leader, loot, supplies, balance, difference, damage, healing, damage_percent, healing_percent]
+      properties:
+        name: {type: string}
+        leader: {type: boolean}
+        loot: {type: integer, format: int64}
+        supplies: {type: integer, format: int64}
+        balance: {type: integer, format: int64}
+        difference: {type: integer, format: int64}
+        damage: {type: integer, format: int64, minimum: 0}
+        healing: {type: integer, format: int64, minimum: 0}
+        damage_percent: {type: number, minimum: 0, maximum: 100}
+        healing_percent: {type: number, minimum: 0, maximum: 100}
+    HuntTransfer:
+      type: object
+      required: [from, to, amount, text]
+      properties:
+        from: {type: string}
+        to: {type: string}
+        amount: {type: integer, format: int64, minimum: 1}
+        text: {type: string}
+    HuntSplit:
+      type: object
+      required: [loot, supplies, balance, share, remainder, damage, healing, members, transfers]
+      properties:
+        loot: {type: integer, format: int64}
+        supplies: {type: integer, format: int64}
+        balance: {type: integer, format: int64}
+        share: {type: integer, format: int64}
+        remainder: {type: integer, format: int64, minimum: 0}
+        damage: {type: integer, format: int64, minimum: 0}
+        healing: {type: integer, format: int64, minimum: 0}
+        members:
+          type: array
+          items: {$ref: '#/components/schemas/HuntMember'}
+        transfers:
+          type: array
+          items: {$ref: '#/components/schemas/HuntTransfer'}
