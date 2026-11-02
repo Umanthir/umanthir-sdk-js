@@ -57,13 +57,17 @@
     "test:watch": "vitest",
     "test:dist": "vitest run --config vitest.dist.config.ts",
     "check:package": "publint --strict && attw --pack . --profile node16",
-    "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run test:dist && npm run check:package"
+    "verify": "npm run check:forbidden && npm run lint && npm run typecheck && npm run test && npm run build && npm run test:dist && npm run check:package && npm run size",
+    "size": "size-limit",
+    "check:forbidden": "sh scripts/check-forbidden-files.sh"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "0.18.5",
     "@biomejs/biome": "2.6.3",
+    "@size-limit/file": "14.3.0",
     "@vitest/coverage-v8": "5.0.5",
     "publint": "0.3.25",
+    "size-limit": "14.3.0",
     "tsdown": "0.23.2",
     "typescript": "7.0.2",
     "vitest": "5.0.5"

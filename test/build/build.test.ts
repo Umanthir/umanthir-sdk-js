@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 
@@ -15,7 +16,7 @@ describe("dist", () => {
   });
 
   it("CJS build exports the client and the error", () => {
-    const mod = require(new URL("index.cjs", dist).pathname);
+    const mod = require(fileURLToPath(new URL("index.cjs", dist)));
     expect(typeof mod.Umanthir).toBe("function");
     expect(new mod.UmanthirError("x")).toBeInstanceOf(mod.UmanthirError);
   });
