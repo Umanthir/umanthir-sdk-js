@@ -21,3 +21,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Warnings: low rate limit, retries, API version mismatch, deprecations, API key in a browser,
   unencrypted base URL and failing hooks.
 - `characters.get(name)`.
+- Community resources: `highscores.list(filters)`, `highscores.character(name, filters)`,
+  `worlds.list()`, `worlds.get(world)`, `drome.rotations()`, `drome.rotations(world, page?)`,
+  `killStatistics.get(world)`, `fansites.list()`, `guilds.list(world)`, `guilds.get(name)`,
+  `polls.list({ page })`, `houses.list(world, town, filters)` and `houses.get(world, houseId)`.

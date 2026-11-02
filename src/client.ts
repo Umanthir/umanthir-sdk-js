@@ -17,6 +17,16 @@ import {
 import { type UmanthirWarning, WarningEmitter } from "./core/warnings.js";
 import { ValidationError } from "./errors.js";
 import { CharactersResource } from "./resources/characters.js";
+import {
+  DromeResource,
+  FansitesResource,
+  GuildsResource,
+  HighscoresResource,
+  HousesResource,
+  KillStatisticsResource,
+  PollsResource,
+  WorldsResource,
+} from "./resources/community.js";
 import { VERSION } from "./version.js";
 
 /** Default address of the Umanthir API. */
@@ -127,6 +137,22 @@ export class Umanthir {
   public readonly baseURL: string;
   /** Character profiles. */
   public readonly characters: CharactersResource;
+  /** Highscores and a character's position in them. */
+  public readonly highscores: HighscoresResource;
+  /** Game worlds. */
+  public readonly worlds: WorldsResource;
+  /** Tibiadrome rotations and rankings. */
+  public readonly drome: DromeResource;
+  /** Kill statistics of a world. */
+  public readonly killStatistics: KillStatisticsResource;
+  /** Promoted and supported fansites. */
+  public readonly fansites: FansitesResource;
+  /** Guilds of a world and guild details. */
+  public readonly guilds: GuildsResource;
+  /** Active and closed polls. */
+  public readonly polls: PollsResource;
+  /** Houses, guildhalls and their auctions. */
+  public readonly houses: HousesResource;
 
   readonly #hasApiKey: boolean;
   readonly #timeout: number;
@@ -189,6 +215,14 @@ export class Umanthir {
     }
 
     this.characters = new CharactersResource(transport);
+    this.highscores = new HighscoresResource(transport);
+    this.worlds = new WorldsResource(transport);
+    this.drome = new DromeResource(transport);
+    this.killStatistics = new KillStatisticsResource(transport);
+    this.fansites = new FansitesResource(transport);
+    this.guilds = new GuildsResource(transport);
+    this.polls = new PollsResource(transport);
+    this.houses = new HousesResource(transport);
   }
 
   /** Safe summary of the configuration; the API key is never included. */

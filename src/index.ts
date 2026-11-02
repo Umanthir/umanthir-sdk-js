@@ -20,4 +20,18 @@ export {
 } from "./errors.js";
 export type * from "./generated/schemas.js";
 export type { CharactersResource } from "./resources/characters.js";
+export type {
+  CharacterHighscoreOptions,
+  DromeResource,
+  FansitesResource,
+  GuildsResource,
+  HighscoreListOptions,
+  HighscoresResource,
+  HouseListOptions,
+  HousesResource,
+  KillStatisticsResource,
+  PollListOptions,
+  PollsResource,
+  WorldsResource,
+} from "./resources/community.js";
 export { VERSION } from "./version.js";
