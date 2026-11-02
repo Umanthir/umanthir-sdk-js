@@ -1,0 +1,71 @@
+{
+  "name": "@umanthir/sdk",
+  "version": "0.0.0",
+  "description": "Official JavaScript/TypeScript SDK for the Umanthir API, for Node.js and browsers.",
+  "license": "MIT",
+  "author": "Umanthir",
+  "homepage": "https://github.com/Umanthir/umanthir-sdk-js#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Umanthir/umanthir-sdk-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Umanthir/umanthir-sdk-js/issues"
+  },
+  "keywords": [
+    "umanthir",
+    "tibia",
+    "sdk",
+    "api",
+    "typescript"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.cts",
+  "unpkg": "./dist/umanthir.min.js",
+  "jsdelivr": "./dist/umanthir.min.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "test:dist": "vitest run --config vitest.dist.config.ts",
+    "check:package": "publint --strict && attw --pack . --profile node16",
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run test:dist && npm run check:package"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
+    "@biomejs/biome": "2.6.3",
+    "@vitest/coverage-v8": "5.0.5",
+    "publint": "0.3.25",
+    "tsdown": "0.23.2",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  }
+}
