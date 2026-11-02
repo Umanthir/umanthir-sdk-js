@@ -38,3 +38,59 @@ describe("client method types", () => {
     expectTypeOf(client.characters.get).returns.toEqualTypeOf<Promise<Character>>();
   });
 });
+
+describe("Community method types", () => {
+  it("return the contract schemas", async () => {
+    const { Umanthir } = await import("../../src/index.js");
+    type S = typeof import("../../src/index.js");
+    const c = new Umanthir();
+    expectTypeOf(c.highscores.list).returns.toEqualTypeOf<
+      Promise<import("../../src/index.js").HighscorePage>
+    >();
+    expectTypeOf(c.highscores.character).returns.toEqualTypeOf<
+      Promise<import("../../src/index.js").RankHit>
+    >();
+    expectTypeOf(c.worlds.list).returns.toEqualTypeOf<
+      Promise<import("../../src/index.js").WorldList>
+    >();
+    expectTypeOf(c.worlds.get).returns.toEqualTypeOf<
+      Promise<import("../../src/index.js").WorldDetail>
+    >();
+    expectTypeOf(c.drome.rotations()).toEqualTypeOf<
+      Promise<import("../../src/index.js").Rotations>
+    >();
+    expectTypeOf(c.drome.rotations("Antica")).toEqualTypeOf<
+      Promise<import("../../src/index.js").DromeRank>
+    >();
+    expectTypeOf(c.killStatistics.get).returns.toEqualTypeOf<
+      Promise<import("../../src/index.js").KillStatistics>
+    >();
+    expectTypeOf(c.fansites.list).returns.toEqualTypeOf<
+      Promise<import("../../src/index.js").Fansites>
+    >();
+    expectTypeOf(c.guilds.list).returns.toEqualTypeOf<
+      Promise<import("../../src/index.js").GuildList>
+    >();
+    expectTypeOf(c.guilds.get).returns.toEqualTypeOf<
+      Promise<import("../../src/index.js").GuildDetail>
+    >();
+    expectTypeOf(c.polls.list).returns.toEqualTypeOf<Promise<import("../../src/index.js").Polls>>();
+    expectTypeOf(c.houses.list).returns.toEqualTypeOf<
+      Promise<import("../../src/index.js").HouseList>
+    >();
+    expectTypeOf(c.houses.get).returns.toEqualTypeOf<
+      Promise<import("../../src/index.js").HouseDetail>
+    >();
+    expectTypeOf<S>().not.toBeAny();
+  });
+
+  it("filters use the contract enums", () => {
+    type HL = import("../../src/index.js").HighscoreListOptions;
+    expectTypeOf<{ vocation: "sorcerers" }>().toExtend<HL>();
+    expectTypeOf<{ vocation: "wizards" }>().not.toExtend<HL>();
+    expectTypeOf<{ "types[]": ["pvp"] }>().not.toExtend<HL>();
+    type HO = import("../../src/index.js").HouseListOptions;
+    expectTypeOf<{ state: "rented"; type: "houses"; order: "rent" }>().toExtend<HO>();
+    expectTypeOf<{ order: "price" }>().not.toExtend<HO>();
+  });
+});
