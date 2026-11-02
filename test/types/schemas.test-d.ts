@@ -29,3 +29,12 @@ describe("public schema types", () => {
     expectTypeOf<OnlineBatch>().not.toBeAny();
   });
 });
+
+describe("client method types", () => {
+  it("characters.get resolves to Character", async () => {
+    const { Umanthir } = await import("../../src/index.js");
+    const client = new Umanthir();
+    expectTypeOf(client.characters.get).parameter(0).toEqualTypeOf<string>();
+    expectTypeOf(client.characters.get).returns.toEqualTypeOf<Promise<Character>>();
+  });
+});
