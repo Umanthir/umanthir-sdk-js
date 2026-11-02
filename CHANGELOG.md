@@ -18,10 +18,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   with `BadRequestError`, `NotFoundError`, `RateLimitError`, `UpstreamError` and
   `ServiceUnavailableError`.
 - Retries with exponential backoff and `Retry-After` for network errors, 429, 502, 503 and 520.
-- Warnings: low rate limit, retries, API version mismatch, deprecations, API key in a browser,
+- Warnings: stale data served from the API cache (`stale: true`), low rate limit, retries, API version mismatch, deprecations, API key in a browser,
   unencrypted base URL and failing hooks.
 - `characters.get(name)`.
 - Community resources: `highscores.list(filters)`, `highscores.character(name, filters)`,
   `worlds.list()`, `worlds.get(world)`, `drome.rotations()`, `drome.rotations(world, page?)`,
   `killStatistics.get(world)`, `fansites.list()`, `guilds.list(world)`, `guilds.get(name)`,
   `polls.list({ page })`, `houses.list(world, town, filters)` and `houses.get(world, houseId)`.
+- Library resources: `library.achievements({ grade })`, `library.boostableBosses()`,
+  `library.creatures({ creature_race })`, `library.experienceTable()`, `library.maps({ region })`,
+  `library.spells({ spell })` and `library.worldQuests({ worldquest })`.

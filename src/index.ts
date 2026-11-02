@@ -34,4 +34,12 @@ export type {
   PollsResource,
   WorldsResource,
 } from "./resources/community.js";
+export type {
+  AchievementListOptions,
+  CreatureListOptions,
+  LibraryResource,
+  MapListOptions,
+  SpellListOptions,
+  WorldQuestListOptions,
+} from "./resources/library.js";
 export { VERSION } from "./version.js";

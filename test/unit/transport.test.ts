@@ -321,6 +321,29 @@ describe("Transport: warnings", () => {
   });
 });
 
+describe("Transport: stale data", () => {
+  it("warns on every response marked stale", async () => {
+    const t = setup([
+      json({ stale: true, updated_at: "2026-11-02T10:00:00Z" }),
+      json({ stale: false }),
+      json({ stale: true }),
+    ]);
+    for (let i = 0; i < 3; i++) await t.transport.request(get());
+    expect(t.warnings.map((w) => w.code)).toEqual(["STALE_DATA", "STALE_DATA"]);
+    expect(t.warnings[0]).toMatchObject({
+      details: { path: "/v2/x", updatedAt: "2026-11-02T10:00:00Z" },
+    });
+    expect(t.warnings[0]?.message).toContain("updated at 2026-11-02T10:00:00Z");
+    expect(t.warnings[1]?.message).not.toContain("updated at");
+  });
+
+  it("ignores non-object bodies", async () => {
+    const t = setup([json([1, 2]), json("text"), json(null)]);
+    for (let i = 0; i < 3; i++) await t.transport.request(get());
+    expect(t.warnings).toEqual([]);
+  });
+});
+
 describe("Transport: logs and hooks", () => {
   it("logs requests and responses with redacted headers", async () => {
     const t = setup(
