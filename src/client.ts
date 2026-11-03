@@ -29,6 +29,7 @@ import {
 } from "./resources/community.js";
 import { LibraryResource } from "./resources/library.js";
 import { OnlineResource, ToolsResource } from "./resources/tools.js";
+import { WikiResource } from "./resources/wiki.js";
 import { VERSION } from "./version.js";
 
 /** Default address of the Umanthir API. */
@@ -161,6 +162,8 @@ export class Umanthir {
   public readonly online: OnlineResource;
   /** Calculators: experience, vocations, skills, exercise weapons and party hunts. */
   public readonly tools: ToolsResource;
+  /** TibiaWiki BR data: Rashid, item categories and items. */
+  public readonly wiki: WikiResource;
 
   readonly #hasApiKey: boolean;
   readonly #timeout: number;
@@ -234,6 +237,7 @@ export class Umanthir {
     this.library = new LibraryResource(transport);
     this.online = new OnlineResource(transport);
     this.tools = new ToolsResource(transport);
+    this.wiki = new WikiResource(transport);
   }
 
   /** Safe summary of the configuration; the API key is never included. */
