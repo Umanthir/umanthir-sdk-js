@@ -16,18 +16,18 @@ import type {
   WorldDetail,
   WorldList,
 } from "../generated/schemas.js";
-import { Resource, seg } from "./base.js";
+import { type Loose, Resource, seg } from "./base.js";
 
 type Query<K extends keyof operations> = NonNullable<operations[K]["parameters"]["query"]>;
 
 /** Filters of the highscores list (`types[]` is the legacy spelling of `types`, not exposed). */
-export type HighscoreListOptions = Omit<Query<"getHighscores">, "types[]">;
+export type HighscoreListOptions = Loose<Omit<Query<"getHighscores">, "types[]">>;
 /** Filters of a character's highscore position (same filters as the list, without `page`). */
-export type CharacterHighscoreOptions = Omit<Query<"getCharacterHighscore">, "types[]">;
+export type CharacterHighscoreOptions = Loose<Omit<Query<"getCharacterHighscore">, "types[]">>;
 /** Filters of the house list of a town. */
-export type HouseListOptions = Query<"getHouses">;
+export type HouseListOptions = Loose<Query<"getHouses">>;
 /** Page of the poll list. */
-export type PollListOptions = Query<"getPolls">;
+export type PollListOptions = Loose<Query<"getPolls">>;
 
 const world = (value: string): string => pathName("World", value, { strict: true });
 

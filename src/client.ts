@@ -38,32 +38,32 @@ export const DEFAULT_BASE_URL = "https://api.umanthir.com";
 /** Options of {@link Umanthir}. All of them are optional. */
 export interface UmanthirOptions {
   /** API address. Must use https, except for localhost. Default: `https://api.umanthir.com`. */
-  baseURL?: string;
+  baseURL?: string | undefined;
   /**
    * API key sent as `Authorization: Bearer <apiKey>`. Never logged.
    * Avoid it in browsers: anything shipped to a browser is visible to its users.
    */
-  apiKey?: string;
+  apiKey?: string | undefined;
   /** Timeout of each attempt, in milliseconds. Default: 30000. */
-  timeout?: number;
+  timeout?: number | undefined;
   /** Retries after a network error, 429, 502, 503 or 520 (GET only). Default: 2. */
-  maxRetries?: number;
+  maxRetries?: number | undefined;
   /** Custom `fetch` implementation. Default: the global `fetch`. */
-  fetch?: typeof fetch;
+  fetch?: typeof fetch | undefined;
   /** Log level. Default: `"warn"`, or `UMANTHIR_LOG` in Node.js. */
-  logLevel?: LogLevel;
+  logLevel?: LogLevel | undefined;
   /** Shortcut for `logLevel: "debug"`: logs every request and response. */
-  debug?: boolean;
+  debug?: boolean | undefined;
   /** Where logs go. Default: `console`. */
-  logger?: Logger;
+  logger?: Logger | undefined;
   /** Include response bodies (truncated to 2 KB) in debug logs. Default: false. */
-  logBodies?: boolean;
+  logBodies?: boolean | undefined;
   /** Called before every attempt, with redacted headers. */
-  onRequest?: (info: RequestInfo) => void;
+  onRequest?: ((info: RequestInfo) => void) | undefined;
   /** Called after every attempt that got a response. */
-  onResponse?: (info: ResponseInfo) => void;
+  onResponse?: ((info: ResponseInfo) => void) | undefined;
   /** Called for every warning, in addition to the logger. */
-  onWarning?: (warning: UmanthirWarning) => void;
+  onWarning?: ((warning: UmanthirWarning) => void) | undefined;
 }
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);

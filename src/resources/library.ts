@@ -11,20 +11,20 @@ import type {
   SpellList,
   WorldQuestList,
 } from "../generated/schemas.js";
-import { Resource } from "./base.js";
+import { type Loose, Resource } from "./base.js";
 
 type Query<K extends keyof operations> = NonNullable<operations[K]["parameters"]["query"]>;
 
 /** Filter of the achievements list. */
-export type AchievementListOptions = Query<"getAchievements">;
+export type AchievementListOptions = Loose<Query<"getAchievements">>;
 /** Filter of the creatures list. */
-export type CreatureListOptions = Query<"getCreatures">;
+export type CreatureListOptions = Loose<Query<"getCreatures">>;
 /** Filter of the map areas. */
-export type MapListOptions = Query<"getMaps">;
+export type MapListOptions = Loose<Query<"getMaps">>;
 /** Filter of the spells list. */
-export type SpellListOptions = Query<"getSpells">;
+export type SpellListOptions = Loose<Query<"getSpells">>;
 /** Filter of the world quests. */
-export type WorldQuestListOptions = Query<"getWorldQuests">;
+export type WorldQuestListOptions = Loose<Query<"getWorldQuests">>;
 
 const REGION = /^[A-Za-z0-9]{1,80}$/;
 
