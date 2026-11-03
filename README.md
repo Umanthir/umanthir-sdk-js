@@ -40,6 +40,24 @@ Browser, from a CDN. Pin the exact version and use the `integrity` hash publishe
 ></script>
 ```
 
+Loading the bundle from JavaScript: set `crossOrigin` in camelCase. A lowercase `script.crossorigin`
+does not enable CORS, so the browser refuses the integrity check and blocks the script:
+
+```js
+const script = document.createElement("script");
+script.src = "https://cdn.jsdelivr.net/npm/@umanthir/sdk@<version>/dist/umanthir.min.js";
+script.integrity = "sha384-<hash from the release notes>";
+script.crossOrigin = "anonymous";
+script.onload = () => {
+  const client = new Umanthir();
+  client.characters.get("Njorn").then(console.log);
+};
+document.head.append(script);
+```
+
+With a Content Security Policy, allow `https://cdn.jsdelivr.net` in `script-src` and
+`https://api.umanthir.com` (or your `baseURL`) in `connect-src`.
+
 Requirements: Node.js 22.18 or later, or an evergreen browser (ES2022).
 
 ## Quick start
