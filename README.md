@@ -315,9 +315,9 @@ const filters: HighscoreListOptions = { vocation: "sorcerers", category: "magicl
 
 ## Compatibility
 
-| SDK        | Umanthir API        |
-| ---------- | ------------------- |
-| unreleased | v2 (contract 2.4.2) |
+| SDK          | Umanthir API        |
+| ------------ | ------------------- |
+| 0.1.0-beta.1 | v2 (contract 2.4.2) |
 
 The SDK follows [Semantic Versioning](https://semver.org/). Breaking changes to the public API only
 happen in major versions, after a deprecation period.

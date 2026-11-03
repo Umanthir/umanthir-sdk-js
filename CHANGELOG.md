@@ -7,6 +7,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0-beta.1] - 2026-11-02
+
+First pre-release, published with the `next` dist-tag.
+
 ### Added
 
 - Package scaffold: ESM, CommonJS, type declarations and the browser bundle `umanthir.min.js`.
@@ -44,3 +48,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   examples for the browser, Node.js ESM and CommonJS.
 - Wiki resources: `wiki.rashidLocation()`, `wiki.categories()`, `wiki.list(category)` and
   `wiki.get(category, name)`.
+
+[Unreleased]: https://github.com/Umanthir/umanthir-sdk-js/compare/v0.1.0-beta.1...HEAD
+[0.1.0-beta.1]: https://github.com/Umanthir/umanthir-sdk-js/releases/tag/v0.1.0-beta.1
