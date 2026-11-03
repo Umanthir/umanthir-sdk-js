@@ -7,6 +7,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-02
+
+First stable release. It covers every data route of the Umanthir API v2 (contract 2.4.2) and keeps
+the public API of 0.1.0-beta.1.
+
 ### Added
 
 - README: loading the browser bundle from JavaScript with SRI (`crossOrigin` in camelCase) and the
@@ -54,5 +59,6 @@ First pre-release, published with the `next` dist-tag.
 - Wiki resources: `wiki.rashidLocation()`, `wiki.categories()`, `wiki.list(category)` and
   `wiki.get(category, name)`.
 
-[Unreleased]: https://github.com/Umanthir/umanthir-sdk-js/compare/v0.1.0-beta.1...HEAD
+[Unreleased]: https://github.com/Umanthir/umanthir-sdk-js/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Umanthir/umanthir-sdk-js/compare/v0.1.0-beta.1...v1.0.0
 [0.1.0-beta.1]: https://github.com/Umanthir/umanthir-sdk-js/releases/tag/v0.1.0-beta.1
