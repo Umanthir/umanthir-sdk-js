@@ -136,7 +136,7 @@ function errorMessage(body: unknown, status: number): string {
   return `HTTP ${status}`;
 }
 
-function describe(error: unknown): string {
+function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
@@ -188,7 +188,7 @@ export class Transport {
       this.#config.warnings.once(`hook:${name}`, {
         code: "HOOK_FAILED",
         message: `The ${name} hook threw an error; the request continued.`,
-        details: { hook: name, error: describe(error) },
+        details: { hook: name, error: errorText(error) },
       });
     }
   }
@@ -303,7 +303,7 @@ export class Transport {
               cause: error,
             })
           : new ConnectionError(
-              `Could not reach the Umanthir API (${request.method} ${href}): ${describe(error)}`,
+              `Could not reach the Umanthir API (${request.method} ${href}): ${errorText(error)}`,
               { cause: error },
             );
         logger.debug(`✗ ${request.method} ${href}: ${failure.message}`);
