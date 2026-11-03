@@ -30,6 +30,10 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      # openapi-typescript supports TypeScript 5 only; the generator stays on TypeScript 5.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
     groups:
       contract-tools:
         patterns: ["*"]
