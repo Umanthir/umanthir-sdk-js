@@ -39,6 +39,9 @@ export abstract class Resource {
   }
 }
 
+/** Makes every property optional and accepts an explicit `undefined` (friendly to `exactOptionalPropertyTypes`). */
+export type Loose<T> = { [K in keyof T]?: T[K] | undefined };
+
 /** Encodes one path segment. */
 export function seg(value: string | number): string {
   return encodeURIComponent(String(value));

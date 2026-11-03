@@ -22,9 +22,9 @@ type Path<K extends keyof operations> = NonNullable<operations[K]["parameters"][
 /** Options of {@link OnlineResource.list}. */
 export interface OnlineListOptions {
   /** `names` returns only the names in `online`; `full` (default) returns players. */
-  fields?: Query<"getOnlineBatch">["fields"];
+  fields?: Query<"getOnlineBatch">["fields"] | undefined;
   /** ETag of a previous response: answers `notModified: true` (no quota used) when nothing changed. */
-  ifNoneMatch?: string;
+  ifNoneMatch?: string | undefined;
 }
 
 /** Result of {@link OnlineResource.list}. */

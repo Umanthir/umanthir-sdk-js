@@ -22,11 +22,11 @@ import type { UmanthirWarning, WarningEmitter } from "./warnings.js";
 /** Options accepted by every SDK method, overriding the client defaults for one call. */
 export interface RequestOptions {
   /** Cancels the request (and any pending retry) when aborted. */
-  signal?: AbortSignal;
+  signal?: AbortSignal | undefined;
   /** Timeout of each attempt, in milliseconds. */
-  timeout?: number;
+  timeout?: number | undefined;
   /** Retries after a network error, 429, 502, 503 or 520 (GET only). */
-  maxRetries?: number;
+  maxRetries?: number | undefined;
 }
 
 /** Passed to `onRequest` before every attempt. Headers are redacted. */

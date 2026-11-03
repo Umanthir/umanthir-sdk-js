@@ -34,6 +34,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `tools.exerciseWeapons(charges)`, `tools.experienceForLevel(level)`,
   `tools.levelForExperience(experience)` (number or bigint), `tools.experienceGoal(target, from)`
   and `tools.splitHunt(text)` (sent once as `text/plain`, never logged).
+- Optional properties of every options and filter type accept an explicit `undefined`, so code
+  compiled with `exactOptionalPropertyTypes` can pass values such as `ifNoneMatch: etag`.
 - Browser bundle tested in Chromium, Firefox and WebKit against an API with the real CORS rules;
   examples for the browser, Node.js ESM and CommonJS.
 - Wiki resources: `wiki.rashidLocation()`, `wiki.categories()`, `wiki.list(category)` and
