@@ -53,6 +53,8 @@ jobs:
       - run: npm run build
       - run: npm run test:dist
       - run: npm run check:package
+      - name: Public API report is up to date
+        run: npm run api:check
       - run: npm run size
 
   test:
