@@ -1,6 +1,5 @@
 import type { RequestOptions } from "../core/transport.js";
 import { pathName, positiveInt } from "../core/validate.js";
-import type { operations } from "../generated/openapi.js";
 import type {
   DromeRank,
   Fansites,
@@ -16,18 +15,18 @@ import type {
   WorldDetail,
   WorldList,
 } from "../generated/schemas.js";
-import { type Loose, Resource, seg } from "./base.js";
-
-type Query<K extends keyof operations> = NonNullable<operations[K]["parameters"]["query"]>;
+import { type Loose, type OperationQuery, Resource, seg } from "./base.js";
 
 /** Filters of the highscores list (`types[]` is the legacy spelling of `types`, not exposed). */
-export type HighscoreListOptions = Loose<Omit<Query<"getHighscores">, "types[]">>;
+export type HighscoreListOptions = Loose<Omit<OperationQuery<"getHighscores">, "types[]">>;
 /** Filters of a character's highscore position (same filters as the list, without `page`). */
-export type CharacterHighscoreOptions = Loose<Omit<Query<"getCharacterHighscore">, "types[]">>;
+export type CharacterHighscoreOptions = Loose<
+  Omit<OperationQuery<"getCharacterHighscore">, "types[]">
+>;
 /** Filters of the house list of a town. */
-export type HouseListOptions = Loose<Query<"getHouses">>;
+export type HouseListOptions = Loose<OperationQuery<"getHouses">>;
 /** Page of the poll list. */
-export type PollListOptions = Loose<Query<"getPolls">>;
+export type PollListOptions = Loose<OperationQuery<"getPolls">>;
 
 const world = (value: string): string => pathName("World", value, { strict: true });
 

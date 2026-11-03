@@ -6,6 +6,7 @@ export type { UmanthirWarning, WarningCode } from "./core/warnings.js";
 export {
   AbortError,
   APIError,
+  type APIErrorInit,
   BadRequestError,
   ConnectionError,
   NotFoundError,
@@ -18,7 +19,9 @@ export {
   UpstreamError,
   ValidationError,
 } from "./errors.js";
+export type { components, operations } from "./generated/openapi.js";
 export type * from "./generated/schemas.js";
+export type { Loose, OperationPath, OperationQuery, Resource } from "./resources/base.js";
 export type { CharactersResource } from "./resources/characters.js";
 export type {
   CharacterHighscoreOptions,

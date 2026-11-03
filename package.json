@@ -57,7 +57,7 @@
     "test:watch": "vitest",
     "test:dist": "vitest run --config vitest.dist.config.ts",
     "check:package": "publint --strict && attw --pack . --profile node16",
-    "verify": "npm run check:forbidden && npm run lint && npm run typecheck && npm run test && npm run test:types && npm run build && npm run test:dist && npm run check:package && npm run size",
+    "verify": "npm run check:forbidden && npm run lint && npm run typecheck && npm run test && npm run test:types && npm run build && npm run test:dist && npm run check:package && npm run api:check && npm run size",
     "size": "size-limit",
     "check:forbidden": "sh scripts/check-forbidden-files.sh",
     "contract:sync": "node scripts/contract.mjs sync",
@@ -65,11 +65,14 @@
     "contract:check": "node scripts/contract.mjs generate && git diff --exit-code -- src/generated openapi && test -z \"$(git ls-files --others --exclude-standard -- src/generated openapi)\"",
     "test:types": "vitest run --config vitest.types.config.ts",
     "test:live": "vitest run --config vitest.live.config.ts",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "api:report": "api-extractor run --local",
+    "api:check": "api-extractor run"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "0.18.5",
     "@biomejs/biome": "2.6.3",
+    "@microsoft/api-extractor": "7.59.4",
     "@playwright/test": "1.64.1",
     "@size-limit/file": "14.3.0",
     "@vitest/coverage-v8": "5.0.5",

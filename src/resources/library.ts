@@ -1,7 +1,6 @@
 import type { RequestOptions } from "../core/transport.js";
 import { intInRange, pathName, queryText } from "../core/validate.js";
 import { ValidationError } from "../errors.js";
-import type { operations } from "../generated/openapi.js";
 import type {
   AchievementList,
   Bosses,
@@ -11,20 +10,18 @@ import type {
   SpellList,
   WorldQuestList,
 } from "../generated/schemas.js";
-import { type Loose, Resource } from "./base.js";
-
-type Query<K extends keyof operations> = NonNullable<operations[K]["parameters"]["query"]>;
+import { type Loose, type OperationQuery, Resource } from "./base.js";
 
 /** Filter of the achievements list. */
-export type AchievementListOptions = Loose<Query<"getAchievements">>;
+export type AchievementListOptions = Loose<OperationQuery<"getAchievements">>;
 /** Filter of the creatures list. */
-export type CreatureListOptions = Loose<Query<"getCreatures">>;
+export type CreatureListOptions = Loose<OperationQuery<"getCreatures">>;
 /** Filter of the map areas. */
-export type MapListOptions = Loose<Query<"getMaps">>;
+export type MapListOptions = Loose<OperationQuery<"getMaps">>;
 /** Filter of the spells list. */
-export type SpellListOptions = Loose<Query<"getSpells">>;
+export type SpellListOptions = Loose<OperationQuery<"getSpells">>;
 /** Filter of the world quests. */
-export type WorldQuestListOptions = Loose<Query<"getWorldQuests">>;
+export type WorldQuestListOptions = Loose<OperationQuery<"getWorldQuests">>;
 
 const REGION = /^[A-Za-z0-9]{1,80}$/;
 

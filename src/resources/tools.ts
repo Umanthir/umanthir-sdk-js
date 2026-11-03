@@ -1,7 +1,6 @@
 import type { RequestOptions } from "../core/transport.js";
 import { intInRange, pathName, queryText } from "../core/validate.js";
 import { ValidationError } from "../errors.js";
-import type { operations } from "../generated/openapi.js";
 import type {
   ExerciseTime,
   ExperienceGoal,
@@ -14,15 +13,12 @@ import type {
   ShareExperience,
   VocationStatus,
 } from "../generated/schemas.js";
-import { Resource, seg } from "./base.js";
-
-type Query<K extends keyof operations> = NonNullable<operations[K]["parameters"]["query"]>;
-type Path<K extends keyof operations> = NonNullable<operations[K]["parameters"]["path"]>;
+import { type OperationPath, type OperationQuery, Resource, seg } from "./base.js";
 
 /** Options of {@link OnlineResource.list}. */
 export interface OnlineListOptions {
   /** `names` returns only the names in `online`; `full` (default) returns players. */
-  fields?: Query<"getOnlineBatch">["fields"] | undefined;
+  fields?: OperationQuery<"getOnlineBatch">["fields"] | undefined;
   /** ETag of a previous response: answers `notModified: true` (no quota used) when nothing changed. */
   ifNoneMatch?: string | undefined;
 }
@@ -33,9 +29,9 @@ export type OnlineListResult =
   | { notModified: true; etag: string | undefined; data: undefined };
 
 /** Base vocation accepted by {@link ToolsResource.vocationStatus}. */
-export type BaseVocation = Path<"getVocationStatus">["vocation"];
+export type BaseVocation = OperationPath<"getVocationStatus">["vocation"];
 /** Parameters of {@link ToolsResource.rawSkills}. */
-export type RawSkillsOptions = Query<"getRawSkills">;
+export type RawSkillsOptions = OperationQuery<"getRawSkills">;
 /** Current progress for {@link ToolsResource.experienceGoal}: either the level or the experience. */
 export type ExperienceGoalFrom =
   | { level: number; experience?: never }

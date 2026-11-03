@@ -228,6 +228,11 @@ export class Transport {
     this.#config.warnings.emit(warning);
   }
 
+  /** Emits a warning only the first time `key` is seen by this client. */
+  public warnOnce(key: string, warning: UmanthirWarning): void {
+    this.#config.warnings.once(key, warning);
+  }
+
   /** The API marks copies served after a failed tibia.com read with `stale: true`. */
   #observeBody(body: unknown, path: string): void {
     if (typeof body !== "object" || body === null || (body as { stale?: unknown }).stale !== true) {
