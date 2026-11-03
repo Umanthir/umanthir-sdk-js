@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Umanthir SDK in the browser</title>
+    <!--
+      Production: load a pinned version from the CDN with its integrity hash (from the release notes):
+      <script src="https://cdn.jsdelivr.net/npm/@umanthir/sdk@<version>/dist/umanthir.min.js"
+              integrity="sha384-<hash>" crossorigin="anonymous"></script>
+      Local development (after `npm run build`), open this file from the repository root:
+    -->
+    <script src="../dist/umanthir.min.js"></script>
+  </head>
+  <body>
+    <pre id="out">Loading…</pre>
+    <script>
+      const out = document.getElementById("out");
+      const client = new Umanthir({ debug: true });
+
+      client.characters
+        .get("Njorn")
+        .then((character) => {
+          out.textContent = JSON.stringify(character.character_information, null, 2);
+        })
+        .catch((error) => {
+          if (error instanceof Umanthir.NotFoundError) out.textContent = "Character not found.";
+          else out.textContent = `${error.name}: ${error.message}`;
+        });
+    </script>
+  </body>
+</html>

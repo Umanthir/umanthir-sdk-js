@@ -1,0 +1,85 @@
+{
+  "name": "@umanthir/sdk",
+  "version": "0.1.0-beta.1",
+  "description": "Official JavaScript/TypeScript SDK for the Umanthir API, for Node.js and browsers.",
+  "license": "MIT",
+  "author": "Umanthir",
+  "homepage": "https://github.com/Umanthir/umanthir-sdk-js#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Umanthir/umanthir-sdk-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Umanthir/umanthir-sdk-js/issues"
+  },
+  "keywords": [
+    "umanthir",
+    "tibia",
+    "sdk",
+    "api",
+    "typescript"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.cts",
+  "unpkg": "./dist/umanthir.min.js",
+  "jsdelivr": "./dist/umanthir.min.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "test:dist": "vitest run --config vitest.dist.config.ts",
+    "check:package": "publint --strict && attw --pack . --profile node16",
+    "verify": "npm run check:forbidden && npm run lint && npm run typecheck && npm run test && npm run test:types && npm run build && npm run test:dist && npm run check:package && npm run api:check && npm run size",
+    "size": "size-limit",
+    "check:forbidden": "sh scripts/check-forbidden-files.sh",
+    "contract:sync": "node scripts/contract.mjs sync",
+    "contract:generate": "node scripts/contract.mjs generate",
+    "contract:check": "node scripts/contract.mjs generate && git diff --exit-code -- src/generated openapi && test -z \"$(git ls-files --others --exclude-standard -- src/generated openapi)\"",
+    "test:types": "vitest run --config vitest.types.config.ts",
+    "test:live": "vitest run --config vitest.live.config.ts",
+    "test:browser": "playwright test",
+    "api:report": "api-extractor run --local",
+    "api:check": "api-extractor run"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
+    "@biomejs/biome": "2.6.3",
+    "@microsoft/api-extractor": "7.59.4",
+    "@playwright/test": "1.64.1",
+    "@size-limit/file": "14.3.0",
+    "@vitest/coverage-v8": "5.0.5",
+    "publint": "0.3.25",
+    "size-limit": "14.3.0",
+    "tsdown": "0.23.2",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  }
+}

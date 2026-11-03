@@ -1,0 +1,8 @@
+[
+  {
+    "name": "Browser bundle (umanthir.min.js)",
+    "path": "dist/umanthir.min.js",
+    "limit": "10 kB",
+    "gzip": true
+  }
+]
