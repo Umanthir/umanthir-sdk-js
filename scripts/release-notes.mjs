@@ -12,7 +12,7 @@ if (
   process.exit(1);
 }
 const changelog = readFileSync(new URL("../CHANGELOG.md", import.meta.url), "utf8");
-const escaped = version.replace(/[.+-]/g, "\\$&");
+const escaped = version.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&");
 const section = new RegExp(
   `^## \\[${escaped}\\][^\\n]*\\n([\\s\\S]*?)(?=^## \\[|(?![\\s\\S]))`,
   "m",
