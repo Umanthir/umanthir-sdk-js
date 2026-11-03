@@ -7,6 +7,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- README: loading the browser bundle from JavaScript with SRI (`crossOrigin` in camelCase) and the
+  Content Security Policy directives it needs.
+
 ## [0.1.0-beta.1] - 2026-11-02
 
 First pre-release, published with the `next` dist-tag.
