@@ -60,3 +60,19 @@ Useful scripts:
 5. Make sure `npm run verify` passes locally.
 
 Do not commit secrets, `.env` files, editor or assistant configuration files. CI rejects them.
+
+## Releases (maintainers)
+
+Releases follow GitFlow and are published only by GitHub Actions:
+
+1. Create `release/X.Y.Z` from an up-to-date `develop`: set the version in `package.json`, move the
+   `Unreleased` entries of `CHANGELOG.md` to `## [X.Y.Z] - YYYY-MM-DD` and update the compatibility
+   table in the README.
+2. Open pull requests to `main` and `develop`; merge both after the checks pass.
+3. Create a signed tag on `main` and push it: `git tag -s vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z`.
+4. The `Release` workflow verifies the tag, runs the full verification and waits for approval in the
+   `npm-publish` environment. After approval it publishes to npm with trusted publishing (no token,
+   with provenance), attests the build, and creates the GitHub release with the browser bundle, its
+   SRI hash, the SBOM and the package tarball.
+
+Pre-releases (`X.Y.Z-beta.N`) are published with the `next` dist-tag; stable versions with `latest`.
