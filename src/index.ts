@@ -7,11 +7,16 @@ export {
   AbortError,
   APIError,
   type APIErrorInit,
+  AuthenticationError,
   BadRequestError,
   ConnectionError,
+  ForbiddenError,
+  GoneError,
+  type GoneReason,
   NotFoundError,
   RateLimitError,
   type RateLimitInfo,
+  type RateLimitReason,
   ServiceUnavailableError,
   type ServiceUnavailableReason,
   TimeoutError,
@@ -52,7 +57,8 @@ export type {
   OnlineListResult,
   OnlineResource,
   RawSkillsOptions,
+  ServerSave,
   ToolsResource,
 } from "./resources/tools.js";
-export type { WikiResource } from "./resources/wiki.js";
+export type { HouseAssembly, WikiHouseListOptions, WikiResource } from "./resources/wiki.js";
 export { VERSION } from "./version.js";

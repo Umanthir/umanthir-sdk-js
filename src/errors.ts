@@ -73,6 +73,8 @@ export class APIError extends UmanthirError {
   public readonly retryAfter: number | undefined;
   /** API version from `X-API-Version`, when present. */
   public readonly apiVersion: string | undefined;
+  /** Stable machine code from `error.code` (e.g. `origin_not_allowed`), when the API sent one. */
+  public readonly code: string | undefined;
 
   public constructor(init: APIErrorInit) {
     super(`${init.status} ${init.message} (${init.method} ${init.url})`);
@@ -84,7 +86,18 @@ export class APIError extends UmanthirError {
     this.body = init.body;
     this.retryAfter = init.retryAfter;
     this.apiVersion = init.headers["x-api-version"];
+    this.code = errorCode(init.body);
   }
+}
+
+/** 401: the token is malformed, unknown, revoked or expired. */
+export class AuthenticationError extends APIError {
+  public override readonly name: string = "AuthenticationError";
+}
+
+/** 403: refused. A site key used from another origin has `code: "origin_not_allowed"`. */
+export class ForbiddenError extends APIError {
+  public override readonly name: string = "ForbiddenError";
 }
 
 /** 400: an argument was rejected by the API. */
@@ -97,14 +110,39 @@ export class NotFoundError extends APIError {
   public override readonly name: string = "NotFoundError";
 }
 
-/** 429: the rate limit of the current window was exceeded. */
+/** Why a house answers 410; `unknown` when the API sent no recognized reason. */
+export type GoneReason = "removed" | "renamed" | "unknown";
+
+/** 410: the house left the game client. A renamed house has its new slug in `replacedBy`. */
+export class GoneError extends APIError {
+  public override readonly name: string = "GoneError";
+  public readonly reason: GoneReason;
+  public readonly replacedBy: string | undefined;
+
+  public constructor(init: APIErrorInit) {
+    super(init);
+    const body = (typeof init.body === "object" && init.body !== null ? init.body : {}) as {
+      reason?: unknown;
+      replaced_by?: unknown;
+    };
+    this.reason = body.reason === "removed" || body.reason === "renamed" ? body.reason : "unknown";
+    this.replacedBy = typeof body.replaced_by === "string" ? body.replaced_by : undefined;
+  }
+}
+
+/** Which limit a 429 hit. The month and day quotas only come back at `retryAfter`, in UTC. */
+export type RateLimitReason = "rate_limit" | "ip_limit" | "monthly_quota" | "daily_quota";
+
+/** 429: a rate limit or a plan quota was exceeded. */
 export class RateLimitError extends APIError {
   public override readonly name: string = "RateLimitError";
   public readonly rateLimit: RateLimitInfo;
+  public readonly reason: RateLimitReason;
 
   public constructor(init: APIErrorInit) {
     super(init);
     this.rateLimit = readRateLimit(init.headers);
+    this.reason = rateLimitReason(init.message);
   }
 }
 
@@ -114,7 +152,12 @@ export class UpstreamError extends APIError {
 }
 
 /** Why the API answered 503. */
-export type ServiceUnavailableReason = "maintenance" | "busy" | "wiki_unavailable" | "unknown";
+export type ServiceUnavailableReason =
+  | "maintenance"
+  | "busy"
+  | "wiki_unavailable"
+  | "unknown"
+  | "houses_unavailable";
 
 /** 503: tibia.com maintenance, upstream protection or wiki data unavailable. */
 export class ServiceUnavailableError extends APIError {
@@ -147,7 +190,24 @@ function unavailableReason(message: string): ServiceUnavailableReason {
   if (m.includes("maintenance")) return "maintenance";
   if (m.includes("busy")) return "busy";
   if (m.includes("wiki")) return "wiki_unavailable";
+  if (m.includes("houses")) return "houses_unavailable";
   return "unknown";
+}
+
+function rateLimitReason(message: string): RateLimitReason {
+  const m = message.toLowerCase();
+  if (m.includes("monthly quota")) return "monthly_quota";
+  if (m.includes("daily quota")) return "daily_quota";
+  if (m.includes("this ip")) return "ip_limit";
+  return "rate_limit";
+}
+
+function errorCode(body: unknown): string | undefined {
+  if (typeof body !== "object" || body === null) return undefined;
+  const inner = (body as { error?: unknown }).error;
+  if (typeof inner !== "object" || inner === null) return undefined;
+  const code = (inner as { code?: unknown }).code;
+  return typeof code === "string" && code !== "" ? code : undefined;
 }
 
 /** Builds the error class that matches the HTTP status. */
@@ -155,8 +215,14 @@ export function createAPIError(init: APIErrorInit): APIError {
   switch (init.status) {
     case 400:
       return new BadRequestError(init);
+    case 401:
+      return new AuthenticationError(init);
+    case 403:
+      return new ForbiddenError(init);
     case 404:
       return new NotFoundError(init);
+    case 410:
+      return new GoneError(init);
     case 429:
       return new RateLimitError(init);
     case 502:

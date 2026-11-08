@@ -23,6 +23,23 @@ describe("live: Umanthir API", () => {
     expect(JSON.stringify(page)).toContain("level");
   });
 
+  it("tools.serverSave returns the countdown", async () => {
+    const save = await client.tools.serverSave("America/Sao_Paulo");
+    expect(save.time_zone).toBe("America/Sao_Paulo");
+    expect(save.time_until.text).toMatch(/^\d+ hours?, \d+ minutes?$/);
+  });
+
+  it("wiki.houses, wiki.house and wiki.houseFloor return a published house", async () => {
+    const { houses } = await client.wiki.houses();
+    const first = houses[0];
+    expect(first).toBeDefined();
+    const house = first as (typeof houses)[number];
+    expect(await client.wiki.house(house.slug)).toHaveProperty("format", "umanthir.house.v1");
+    const floor = house.floors[0] as (typeof house.floors)[number];
+    const png = await client.wiki.houseFloor(house.slug, floor.z);
+    expect([...png.slice(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47]);
+  });
+
   it("the API major version is the supported one", () => {
     expect(warnings.filter((w) => w.code === "API_VERSION_MISMATCH")).toEqual([]);
     expect(SUPPORTED_API_MAJOR).toBe(2);

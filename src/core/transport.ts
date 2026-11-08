@@ -59,6 +59,8 @@ export interface TransportRequest {
   text?: string;
   /** Extra request headers (internal use, e.g. `If-None-Match`). */
   headers?: Readonly<Record<string, string>>;
+  /** The success body is binary: `data` is a `Uint8Array`. Errors are still read as JSON. */
+  binary?: boolean;
   options?: RequestOptions | undefined;
 }
 
@@ -289,7 +291,8 @@ export class Transport {
 
       const started = this.#deps.now();
       let response: Response;
-      let text: string;
+      let text = "";
+      let bytes: Uint8Array | undefined;
       try {
         const init: RequestInit = {
           method: request.method,
@@ -300,7 +303,11 @@ export class Transport {
         };
         if (body !== undefined) init.body = body;
         response = await this.#config.fetch(href, init);
-        text = await response.text();
+        if (request.binary && response.ok && response.status !== 304) {
+          bytes = new Uint8Array(await response.arrayBuffer());
+        } else {
+          text = await response.text();
+        }
       } catch (error) {
         if (userSignal?.aborted) throw new AbortError("Request aborted.", { cause: error });
         const failure = timeoutSignal.aborted
@@ -350,6 +357,26 @@ export class Transport {
 
       if (response.status === 304) {
         return { status: 304, headers: responseHeaders, data: undefined, notModified: true };
+      }
+
+      if (bytes !== undefined) {
+        if (bytes.length === 0) {
+          throw createAPIError({
+            status: response.status,
+            message: "Empty response body",
+            method: request.method,
+            url: href,
+            headers: responseHeaders,
+            body: undefined,
+            retryAfter: undefined,
+          });
+        }
+        return {
+          status: response.status,
+          headers: responseHeaders,
+          data: bytes as T,
+          notModified: false,
+        };
       }
 
       let parsed: unknown;

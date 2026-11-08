@@ -1,6 +1,7 @@
 import type { RequestOptions } from "../core/transport.js";
 import { intInRange, pathName, queryText } from "../core/validate.js";
 import { ValidationError } from "../errors.js";
+import type { operations } from "../generated/openapi.js";
 import type {
   ExerciseTime,
   ExperienceGoal,
@@ -30,6 +31,9 @@ export type OnlineListResult =
 
 /** Base vocation accepted by {@link ToolsResource.vocationStatus}. */
 export type BaseVocation = OperationPath<"getVocationStatus">["vocation"];
+/** Result of {@link ToolsResource.serverSave}. */
+export type ServerSave =
+  operations["getServerSave"]["responses"][200]["content"]["application/json"];
 /** Parameters of {@link ToolsResource.rawSkills}. */
 export type RawSkillsOptions = OperationQuery<"getRawSkills">;
 /** Current progress for {@link ToolsResource.experienceGoal}: either the level or the experience. */
@@ -40,6 +44,7 @@ export type ExperienceGoalFrom =
 const MAX_LEVEL = 821_009;
 const MAX_EXPERIENCE = 9_223_372_036_854_775_807n;
 const MAX_HUNT_BYTES = 65_536;
+const TIME_ZONE = /^[A-Za-z0-9_+-]+(?:\/[A-Za-z0-9_+-]+){0,2}$/;
 const VOCATIONS: readonly string[] = ["druid", "knight", "monk", "paladin", "sorcerer"];
 
 function experience(label: string, value: unknown): string {
@@ -218,7 +223,28 @@ export class ToolsResource extends Resource {
   }
 
   /**
-   * Splits the profit or waste of a party hunt from the Party Hunt Analyzer text.
+   * The next server save (10:00 Europe/Berlin) in a time zone, and how long until it.
+   *
+   * @param timeZone IANA name, case-sensitive, such as `America/Sao_Paulo` or `UTC`.
+   * @throws {NotFoundError} when the time zone does not exist.
+   *
+   * @example
+   * ```ts
+   * const save = await client.tools.serverSave("America/Sao_Paulo");
+   * console.log(save.server_save_time, save.time_until.text); // 06:00 13 hours, 39 minutes
+   * ```
+   */
+  public async serverSave(timeZone: string, options?: RequestOptions): Promise<ServerSave> {
+    if (typeof timeZone !== "string" || timeZone.length > 64 || !TIME_ZONE.test(timeZone)) {
+      throw new ValidationError("timeZone must be an IANA name, such as America/Sao_Paulo.");
+    }
+    const path = timeZone.split("/").map(seg).join("/");
+    return this.call<ServerSave>(`/v2/tools/serversave/${path}`, options);
+  }
+
+  /**
+   * Splits the profit or waste of a party hunt from the Party Hunt Analyzer text. The result
+   * also has the hunt `session` (date, start time and duration), or `null` without those lines.
    * Sent once (POST, never retried); the text is not logged by the SDK.
    */
   public async splitHunt(analyzerText: string, options?: RequestOptions): Promise<HuntSplit> {

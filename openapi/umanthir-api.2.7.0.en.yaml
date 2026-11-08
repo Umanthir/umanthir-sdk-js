@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Umanthir API
-  version: 2.4.2
+  version: 2.7.0
   description: |
     Umanthir API v2. Reads public pages from tibia.com and returns JSON.
 
@@ -18,9 +18,36 @@ info:
     recognises it, answers 503 `Tibia.com is under maintenance.` with `Retry-After`, and stops calling
     tibia.com for 5 minutes; after that, one probe at a time checks whether it is back.
 
+    Every read of tibia.com, from every route, goes through one shared ceiling. A Cloudflare
+    challenge pauses all reads for 30 minutes, a 429 for its `Retry-After`, and a 403 or 503 for
+    a growing pause; then one probe checks whether reads may go on.
+
+    tibia.com pages are cached per route: worlds 60 s, guilds 5 min, houses, highscores and Drome
+    15 min, polls 30 min, character profiles 5 min. Pages that tibia.com renews once a day follow its
+    clock (Europe/Berlin): achievements, maps and world quests until 10:10 (server save plus
+    10 minutes), kill statistics until 03:10. When tibia.com cannot be read, the last good page is
+    still served for up to 6 hours after it expired. Every answer
+    built from tibia.com data carries `X-Umanthir-Data-Age` (seconds since the oldest page was read)
+    and `X-Umanthir-Data-State` (`fresh` or `stale`).
+
     Any website may call the API from the browser (CORS `Access-Control-Allow-Origin: *`).
     The preflight `OPTIONS` answers 204 and allows `Authorization`, `Content-Type` and
     `If-None-Match`; it does not count against the rate limit. No cookies are used.
+
+    A token is optional: `Authorization: Bearer umt_live_<id>_<secret>`, created in the Umanthir
+    portal. Without a token, the anonymous limit per IP applies. With a token, the plan's limits apply:
+    a peak per minute per token, and a monthly quota (and, on some plans, a daily one) per application.
+    A token that is unknown, revoked or expired answers 401 `Invalid token.` A used up quota answers
+    429 with `Retry-After` until the first day of next month (or next day) at 00:00 UTC. If the token
+    cannot be checked for a moment, the request is served as anonymous.
+
+    A site key is a token made for one website: it is accepted only from that site's exact origins
+    (`Origin`, else `Referer`), with a cap per visitor IP. From another origin, or without one, it
+    answers 403 with `code: origin_not_allowed`, and the answer echoes the accepted origin in
+    `Access-Control-Allow-Origin` with `Vary: Origin`. A refused request does not count.
+security:
+  - {}
+  - PortalToken: []
 servers:
   - url: http://127.0.0.1:8081
     description: Local process. The binary's default port is 8080; the Postman collection uses 8081.
@@ -61,6 +88,10 @@ paths:
               $ref: '#/components/headers/RateLimitRemaining'
             RateLimit-Reset:
               $ref: '#/components/headers/RateLimitReset'
+            X-Umanthir-Data-Age:
+              $ref: '#/components/headers/XUmanthirDataAge'
+            X-Umanthir-Data-State:
+              $ref: '#/components/headers/XUmanthirDataState'
           content:
             application/json:
               schema:
@@ -104,7 +135,7 @@ paths:
         '503':
           $ref: '#/components/responses/Maintenance'
         '520':
-          $ref: '#/components/responses/UpstreamFailed'
+          $ref: '#/components/responses/CharacterUpstreamFailed'
   /v2/community/highscores:
     get:
       tags: [Community]
@@ -1758,7 +1789,7 @@ paths:
         - $ref: '#/components/parameters/CharacterName'
       responses:
         '200':
-          description: Profile data and the online flag.
+          description: "Profile data and the online flag. The world list comes from the cache shared with `GET /v2/tools/online` (fresh for 30 s). `X-Umanthir-Data-Age` is the age of the older part, profile or world list; `X-Umanthir-Data-State` is `stale` when either one is."
           headers:
             X-API-Version:
               $ref: '#/components/headers/XApiVersion'
@@ -1772,6 +1803,10 @@ paths:
               $ref: '#/components/headers/RateLimitRemaining'
             RateLimit-Reset:
               $ref: '#/components/headers/RateLimitReset'
+            X-Umanthir-Data-Age:
+              $ref: '#/components/headers/XUmanthirDataAge'
+            X-Umanthir-Data-State:
+              $ref: '#/components/headers/XUmanthirDataState'
           content:
             application/json:
               schema:
@@ -1810,7 +1845,7 @@ paths:
         '503':
           $ref: '#/components/responses/Maintenance'
         '520':
-          $ref: '#/components/responses/UpstreamFailed'
+          $ref: '#/components/responses/CharacterUpstreamFailed'
   /v2/tools/experience/share/{levels}:
     get:
       tags: [Tools]
@@ -2242,6 +2277,75 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+  /v2/tools/serversave/{timeZone}:
+    get:
+      tags: [Tools]
+      operationId: getServerSave
+      summary: "Next server save in a time zone"
+      description: |
+        Computed at request time: reads nothing from tibia.com or from the wiki. The server save is at
+        10:00 Europe/Berlin. `server_save_time` is that hour in the requested zone; it moves when either
+        side changes between summer and winter time. `time_until` is how long until the next one, and its
+        `text` shows hours and whole minutes. Exactly at 10:00, the next one is tomorrow's.
+      parameters:
+        - name: timeZone
+          in: path
+          required: true
+          description: "IANA time zone. The slash may be literal or %2F: America/Sao_Paulo, America%2FSao_Paulo, UTC."
+          schema: {type: string, maxLength: 64, example: America/Sao_Paulo}
+      responses:
+        '200':
+          description: "The next server save, in the zone and in UTC, and how long until it."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [time_zone, server_save_time, utc_offset, next_server_save, next_server_save_utc, time_until]
+                properties:
+                  time_zone: {type: string, example: America/Sao_Paulo}
+                  server_save_time: {type: string, example: '06:00'}
+                  utc_offset: {type: string, example: '-03:00'}
+                  next_server_save: {type: string, format: date-time, example: '2026-11-09T06:00:00-03:00'}
+                  next_server_save_utc: {type: string, format: date-time, example: '2026-11-09T09:00:00Z'}
+                  time_until:
+                    type: object
+                    required: [hours, minutes, total_seconds, text]
+                    properties:
+                      hours: {type: integer, example: 13}
+                      minutes: {type: integer, example: 39}
+                      total_seconds: {type: integer, example: 49140}
+                      text: {type: string, example: '13 hours, 39 minutes'}
+        '400':
+          description: "Not the shape of an IANA name, or a zone that is not allowed, such as Local."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 400, message: Invalid time zone.}
+        '404':
+          description: "No such time zone."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: {status_code: 404, message: Time zone not found.}
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /v2/tools/hunt/split:
     post:
       tags: [Tools]
@@ -2322,6 +2426,7 @@ paths:
                 party:
                   summary: Four members, profit
                   value:
+                    session: {date: '2026-10-24', start_time: '09:22:21', duration: '02:26', duration_minutes: 146}
                     loot: 37346426
                     supplies: 10586766
                     balance: 26759660
@@ -2432,6 +2537,147 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '503':
           $ref: '#/components/responses/WikiUnavailable'
+  /v2/wiki/houses:
+    get:
+      tags: [Wiki]
+      operationId: getWikiHouses
+      summary: "Tibia houses with their floor plans"
+      description: |
+        Every house of the Tibia client that the Umanthir portal published, with links to the assembly
+        JSON and to one transparent PNG per floor (floor 7 is the surface; lower numbers are above it, higher
+        ones underground). Data comes from the Tibia client, extracted by the TibiaDataLeech and published by
+        an Admin; a new house shows up within a minute of the publication, with no change to the API. Only
+        active houses are listed. `Cache-Control` lasts 1 minute.
+      parameters:
+        - name: town
+          in: query
+          required: false
+          description: "Town, without case (`thais`). An unknown town returns an empty list."
+          schema: {type: string, maxLength: 100, example: thais}
+        - name: guildhall
+          in: query
+          required: false
+          description: "`true` lists only guildhalls, `false` only houses. Another value is 400 `Invalid filter.`."
+          schema: {type: string, enum: ['true', 'false']}
+      responses:
+        '200':
+          description: "The houses, by town and name."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientHouseList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/HousesUnavailable'
+  /v2/wiki/houses/{slug}:
+    get:
+      tags: [Wiki]
+      operationId: getWikiHouse
+      summary: "Assembly JSON of one house"
+      description: |
+        The house JSON as the portal published it (format `umanthir.house.v1`, the same as the export of
+        the portal Editor): `house` (id, name, town, rent, size, beds, guildhall, entrance), `box`, `assembly`
+        (how to draw each sprite on the floor PNGs) and `floors`, with each square and its objects from the
+        bottom up, and `draws` with the rectangle of each sprite in the PNG. `ETag` is the sha256 of the
+        published file. A house removed or renamed in the client is 410, with `reason` and, when renamed,
+        `replaced_by`. `Cache-Control` lasts 5 minutes.
+      parameters:
+        - $ref: '#/components/parameters/HouseSlug'
+      responses:
+        '200':
+          description: "The assembly JSON."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema: {type: object}
+        '304':
+          description: Not Modified.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/HouseNotFound'
+        '410':
+          $ref: '#/components/responses/HouseGone'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/HousesUnavailable'
+  /v2/wiki/houses/{slug}/floors/{z}:
+    get:
+      tags: [Wiki]
+      operationId: getWikiHouseFloor
+      summary: "Plan of one floor, as a transparent PNG"
+      description: |
+        The PNG of floor `{z}`, drawn as in the portal Editor, with a transparent background. Pixel (0, 0)
+        is the `image_origin` square of the assembly JSON; each square is 32 px. To see a floor over the one
+        below it, draw the lower one 32 px to the right and 32 px down. `ETag` is the sha256 of the published
+        file. `Cache-Control` lasts 1 hour.
+      parameters:
+        - $ref: '#/components/parameters/HouseSlug'
+        - name: z
+          in: path
+          required: true
+          description: "Floor, 0 to 15, without a leading zero. Another value is 400 `Invalid floor.`; a floor the house does not have is 404 `Floor not found.`."
+          schema: {type: integer, minimum: 0, maximum: 15, example: 7}
+      responses:
+        '200':
+          description: "The floor plan."
+          headers:
+            X-API-Version:
+              $ref: '#/components/headers/XApiVersion'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            ETag:
+              $ref: '#/components/headers/ETag'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            image/png:
+              schema: {type: string, format: binary}
+        '304':
+          description: Not Modified.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/HouseNotFound'
+        '410':
+          $ref: '#/components/responses/HouseGone'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/HousesUnavailable'
   /v2/wiki/{category}:
     get:
       tags: [Wiki]
@@ -2785,6 +3031,12 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
 components:
   parameters:
+    HouseSlug:
+      name: slug
+      in: path
+      required: true
+      description: "House slug from the list: lower-case ASCII with hyphens. Another format is 400 `Invalid house.`."
+      schema: {type: string, pattern: '^[a-z0-9]+(-[a-z0-9]+)*$', maxLength: 120, example: admiral-s-avenue-1}
     WikiCategory:
       name: category
       in: path
@@ -2921,11 +3173,26 @@ components:
   headers:
     XApiVersion:
       description: API version.
-      schema: {type: string, example: 2.4.2}
+      schema: {type: string, example: 2.7.0}
     CacheControl:
       schema: {type: string, example: 'public, max-age=60'}
     ETag:
       schema: {type: string}
+    XUmanthirDataAge:
+      description: "Seconds since the profile behind this answer was read from tibia.com. Profiles are cached: fresh for 5 minutes, then served stale while one refresh runs in the background."
+      schema: {type: integer, example: 42}
+    XUmanthirDataState:
+      description: "`fresh` (younger than 5 minutes) or `stale` (older; a refresh is already running, or tibia.com could not be read)."
+      schema: {type: string, enum: [fresh, stale], example: fresh}
+    Deprecation:
+      description: "The 520 answer of this route is deprecated since this date (RFC 9745). Only on that 520, and only while a sunset date is set."
+      schema: {type: string, example: '@1777939200'}
+    Sunset:
+      description: "From this date the 520 answer of this route becomes 503 with Retry-After (RFC 8594)."
+      schema: {type: string, example: 'Tue, 02 Feb 2027 00:00:00 GMT'}
+    DeprecationLink:
+      description: "Where the deprecation is documented."
+      schema: {type: string, example: '<https://api.umanthir.com/v2/docs>; rel="deprecation"; type="text/html"'}
     RateLimitLimit:
       schema: {type: integer}
     RateLimitRemaining:
@@ -2991,9 +3258,50 @@ components:
         Failure fetching or reading tibia.com. The response is closed. Generic message
         `Upstream request failed.` An empty highscore can also respond 520 with
         `Error when getting Hightscore ranks category: (...)`.
+        When the API itself holds the read back (read ceiling, or a pause after a Cloudflare
+        challenge, 429, 403 or 503 from tibia.com), the answer carries `Retry-After` and
+        `Cache-Control: no-store`.
       headers:
         X-API-Version:
           $ref: '#/components/headers/XApiVersion'
+        Retry-After:
+          schema: {type: integer, example: 60}
+          description: Seconds until the API reads tibia.com again. Only when the read was held back.
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+        ETag:
+          $ref: '#/components/headers/ETag'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimitLimit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimitReset'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: {status_code: 520, message: Upstream request failed.}
+    CharacterUpstreamFailed:
+      description: |
+        No profile to serve: tibia.com could not be read and there is no cached copy young enough
+        (up to 24 hours). The message is `Upstream request failed.` `Retry-After` says when the API
+        reads tibia.com again, with `Cache-Control: no-store`.
+        Deprecated: this 520 becomes **503 with `Retry-After`** at the `Sunset` date. While a date is
+        set, the answer carries `Deprecation`, `Sunset` and `Link` headers.
+      headers:
+        X-API-Version:
+          $ref: '#/components/headers/XApiVersion'
+        Retry-After:
+          schema: {type: integer, example: 60}
+          description: "Seconds until the API reads tibia.com again."
+        Deprecation:
+          $ref: '#/components/headers/Deprecation'
+        Sunset:
+          $ref: '#/components/headers/Sunset'
+        Link:
+          $ref: '#/components/headers/DeprecationLink'
         Cache-Control:
           $ref: '#/components/headers/CacheControl'
         ETag:
@@ -3096,6 +3404,45 @@ components:
             $ref: '#/components/schemas/Error'
           example:
             error: {status_code: 404, message: Not found.}
+    HouseNotFound:
+      description: "Unknown house (`House not found.`) or floor (`Floor not found.`)."
+      headers:
+        X-API-Version:
+          $ref: '#/components/headers/XApiVersion'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: {status_code: 404, message: House not found.}
+    HouseGone:
+      description: "The house left the Tibia client: `reason` is `removed`, or `renamed` with the new slug in `replaced_by`."
+      headers:
+        X-API-Version:
+          $ref: '#/components/headers/XApiVersion'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HouseGone'
+          example:
+            error: {status_code: 410, message: House renamed.}
+            reason: renamed
+            replaced_by: thais-clanhall
+    HousesUnavailable:
+      description: |
+        The houses bucket is not configured or does not answer and there is no recent index, or a file
+        does not match the index (a publication in progress). `Retry-After` suggests when to try again.
+      headers:
+        X-API-Version:
+          $ref: '#/components/headers/XApiVersion'
+        Retry-After:
+          schema: {type: integer, example: 60}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: {status_code: 503, message: Houses data unavailable.}
     WikiUnavailable:
       description: |
         The leech database is not configured or does not answer, and there is no recent copy
@@ -3152,6 +3499,11 @@ components:
       headers:
         ETag:
           schema: {type: string}
+  securitySchemes:
+    PortalToken:
+      type: http
+      scheme: bearer
+      description: Optional token from the Umanthir portal (umt_live_<id>_<secret>).
   schemas:
     OnlineBatch:
       type: object
@@ -3202,6 +3554,7 @@ components:
           properties:
             status_code: {type: integer}
             message: {type: string}
+            code: {type: string, description: Stable machine code; only on some errors (origin_not_allowed).}
     Share:
       type: object
       required: [min, max]
@@ -4141,6 +4494,53 @@ components:
           required: [count]
           properties:
             count: {type: integer}
+    ClientHouseList:
+      type: object
+      description: "The published houses."
+      required: [client_version, published_at, count, houses]
+      properties:
+        client_version: {type: string, example: 2026-11-07_26d51f8a76e1}
+        published_at: {type: string, format: date-time}
+        count: {type: integer, example: 995}
+        houses:
+          type: array
+          items:
+            $ref: '#/components/schemas/HouseSummary'
+    HouseSummary:
+      type: object
+      description: "A house, with the links to its assembly JSON and floor plans."
+      required: [id, name, slug, town, rent, guildhall, assembly, floors, client_version, updated_at]
+      properties:
+        id: {type: integer, example: 63005}
+        name: {type: string, example: Admiral's Avenue 1}
+        slug: {type: string, example: admiral-s-avenue-1}
+        town: {type: string, example: Liberty Bay}
+        rent: {type: integer, example: 400000}
+        guildhall: {type: boolean}
+        assembly: {type: string, format: uri, example: 'https://api.umanthir.com/v2/wiki/houses/admiral-s-avenue-1'}
+        floors:
+          type: array
+          items:
+            type: object
+            required: [z, image]
+            properties:
+              z: {type: integer, example: 7}
+              image: {type: string, format: uri, example: 'https://api.umanthir.com/v2/wiki/houses/admiral-s-avenue-1/floors/7'}
+        client_version: {type: string, example: 2026-11-07_26d51f8a76e1}
+        updated_at: {type: string, format: date-time}
+    HouseGone:
+      type: object
+      description: "Error of a house that left the client."
+      required: [error, reason]
+      properties:
+        error:
+          type: object
+          required: [status_code, message]
+          properties:
+            status_code: {type: integer, example: 410}
+            message: {type: string, example: House renamed.}
+        reason: {type: string, enum: [removed, renamed]}
+        replaced_by: {type: string, example: thais-clanhall}
     WikiCategoryList:
       type: object
       description: "The catalog of categories and the total of active items."
@@ -4290,8 +4690,18 @@ components:
         text: {type: string}
     HuntSplit:
       type: object
-      required: [loot, supplies, balance, share, remainder, damage, healing, members, transfers]
+      required: [session, loot, supplies, balance, share, remainder, damage, healing, members, transfers]
       properties:
+        session:
+          type: object
+          nullable: true
+          description: "The top lines of the analyzer, as the game shows them, with no time zone. Null when the text does not bring them. Each field is null when its line is missing or in an unknown form."
+          required: [date, start_time, duration, duration_minutes]
+          properties:
+            date: {type: string, nullable: true, example: '2026-10-24'}
+            start_time: {type: string, nullable: true, example: '09:22:21'}
+            duration: {type: string, nullable: true, example: '02:26'}
+            duration_minutes: {type: integer, nullable: true, example: 146}
         loot: {type: integer, format: int64}
         supplies: {type: integer, format: int64}
         balance: {type: integer, format: int64}
