@@ -7,6 +7,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- API contract 2.7.0.
+- `tools.serverSave(timeZone)`: the next server save in an IANA time zone and how long until it.
+- `wiki.houses()`, `wiki.house(slug)` and `wiki.houseFloor(slug, z)`: the houses published from the
+  game client, their assembly JSON and one transparent PNG per floor.
+- `session` in the result of `tools.splitHunt`: hunt date, start time and duration.
+- `AuthenticationError` (401), `ForbiddenError` (403) and `GoneError` (410), also on the browser
+  global.
+- `APIError.code`, `RateLimitError.reason` and the `houses_unavailable` reason of
+  `ServiceUnavailableError`.
+
 ## [1.0.0] - 2026-11-02
 
 First stable release. It covers every data route of the Umanthir API v2 (contract 2.4.2) and keeps

@@ -815,6 +815,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/tools/serversave/{timeZone}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Next server save in a time zone
+         * @description Computed at request time: reads nothing from tibia.com or from the wiki. The server save is at
+         *     10:00 Europe/Berlin. `server_save_time` is that hour in the requested zone; it moves when either
+         *     side changes between summer and winter time. `time_until` is how long until the next one, and its
+         *     `text` shows hours and whole minutes. Exactly at 10:00, the next one is tomorrow's.
+         */
+        get: operations["getServerSave"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/tools/skills/raw": {
         parameters: {
             query?: never;
@@ -947,6 +970,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/wiki/houses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tibia houses with their floor plans
+         * @description Every house of the Tibia client that the Umanthir portal published, with links to the assembly
+         *     JSON and to one transparent PNG per floor (floor 7 is the surface; lower numbers are above it, higher
+         *     ones underground). Data comes from the Tibia client, extracted by the TibiaDataLeech and published by
+         *     an Admin; a new house shows up within a minute of the publication, with no change to the API. Only
+         *     active houses are listed. `Cache-Control` lasts 1 minute.
+         */
+        get: operations["getWikiHouses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/wiki/houses/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Assembly JSON of one house
+         * @description The house JSON as the portal published it (format `umanthir.house.v1`, the same as the export of
+         *     the portal Editor): `house` (id, name, town, rent, size, beds, guildhall, entrance), `box`, `assembly`
+         *     (how to draw each sprite on the floor PNGs) and `floors`, with each square and its objects from the
+         *     bottom up, and `draws` with the rectangle of each sprite in the PNG. `ETag` is the sha256 of the
+         *     published file. A house removed or renamed in the client is 410, with `reason` and, when renamed,
+         *     `replaced_by`. `Cache-Control` lasts 5 minutes.
+         */
+        get: operations["getWikiHouse"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/wiki/houses/{slug}/floors/{z}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Plan of one floor, as a transparent PNG
+         * @description The PNG of floor `{z}`, drawn as in the portal Editor, with a transparent background. Pixel (0, 0)
+         *     is the `image_origin` square of the assembly JSON; each square is 32 px. To see a floor over the one
+         *     below it, draw the lower one 32 px to the right and 32 px down. `ETag` is the sha256 of the published
+         *     file. `Cache-Control` lasts 1 hour.
+         */
+        get: operations["getWikiHouseFloor"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/wiki/rashid/location": {
         parameters: {
             query?: never;
@@ -1058,6 +1153,16 @@ export interface components {
             vocation?: string;
             world?: string;
         };
+        /** @description The published houses. */
+        ClientHouseList: {
+            /** @example 2026-11-07_26d51f8a76e1 */
+            client_version: string;
+            /** @example 995 */
+            count: number;
+            houses: components["schemas"]["HouseSummary"][];
+            /** Format: date-time */
+            published_at: string;
+        };
         ClosedPoll: {
             /** Format: date */
             ended_on: string;
@@ -1142,6 +1247,8 @@ export interface components {
         };
         Error: {
             error: {
+                /** @description Stable machine code; only on some errors (origin_not_allowed). */
+                code?: string;
                 message: string;
                 status_code: number;
             };
@@ -1375,6 +1482,19 @@ export interface components {
             type: "house" | "guildhall";
             world: string;
         };
+        /** @description Error of a house that left the client. */
+        HouseGone: {
+            error: {
+                /** @example House renamed. */
+                message: string;
+                /** @example 410 */
+                status_code: number;
+            };
+            /** @enum {string} */
+            reason: "removed" | "renamed";
+            /** @example thais-clanhall */
+            replaced_by?: string;
+        };
         HouseList: {
             /** @description Number of items in houses. */
             count: number;
@@ -1413,6 +1533,38 @@ export interface components {
             /** @description The whole paragraph, always present. */
             text: string;
         };
+        /** @description A house, with the links to its assembly JSON and floor plans. */
+        HouseSummary: {
+            /**
+             * Format: uri
+             * @example https://api.umanthir.com/v2/wiki/houses/admiral-s-avenue-1
+             */
+            assembly: string;
+            /** @example 2026-11-07_26d51f8a76e1 */
+            client_version: string;
+            floors: {
+                /**
+                 * Format: uri
+                 * @example https://api.umanthir.com/v2/wiki/houses/admiral-s-avenue-1/floors/7
+                 */
+                image: string;
+                /** @example 7 */
+                z: number;
+            }[];
+            guildhall: boolean;
+            /** @example 63005 */
+            id: number;
+            /** @example Admiral's Avenue 1 */
+            name: string;
+            /** @example 400000 */
+            rent: number;
+            /** @example admiral-s-avenue-1 */
+            slug: string;
+            /** @example Liberty Bay */
+            town: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
         HuntMember: {
             /** Format: int64 */
             balance: number;
@@ -1443,6 +1595,17 @@ export interface components {
             members: components["schemas"]["HuntMember"][];
             /** Format: int64 */
             remainder: number;
+            /** @description The top lines of the analyzer, as the game shows them, with no time zone. Null when the text does not bring them. Each field is null when its line is missing or in an unknown form. */
+            session: {
+                /** @example 2026-10-24 */
+                date: string | null;
+                /** @example 02:26 */
+                duration: string | null;
+                /** @example 146 */
+                duration_minutes: number | null;
+                /** @example 09:22:21 */
+                start_time: string | null;
+            } | null;
             /** Format: int64 */
             share: number;
             /** Format: int64 */
@@ -2039,6 +2202,40 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
+        /**
+         * @description No profile to serve: tibia.com could not be read and there is no cached copy young enough
+         *     (up to 24 hours). The message is `Upstream request failed.` `Retry-After` says when the API
+         *     reads tibia.com again, with `Cache-Control: no-store`.
+         *     Deprecated: this 520 becomes **503 with `Retry-After`** at the `Sunset` date. While a date is
+         *     set, the answer carries `Deprecation`, `Sunset` and `Link` headers.
+         */
+        CharacterUpstreamFailed: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                Deprecation: components["headers"]["Deprecation"];
+                ETag: components["headers"]["ETag"];
+                Link: components["headers"]["DeprecationLink"];
+                "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                /** @description Seconds until the API reads tibia.com again. */
+                "Retry-After"?: number;
+                Sunset: components["headers"]["Sunset"];
+                "X-API-Version": components["headers"]["XApiVersion"];
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "error": {
+                 *         "status_code": 520,
+                 *         "message": "Upstream request failed."
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         /** @description World tibia.com does not know (the selector does not show the requested world), unknown guild, or page out of the expected format. */
         GuildsNotFound: {
             headers: {
@@ -2062,6 +2259,44 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
+        /** @description The house left the Tibia client: `reason` is `removed`, or `renamed` with the new slug in `replaced_by`. */
+        HouseGone: {
+            headers: {
+                "X-API-Version": components["headers"]["XApiVersion"];
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "error": {
+                 *         "status_code": 410,
+                 *         "message": "House renamed."
+                 *       },
+                 *       "reason": "renamed",
+                 *       "replaced_by": "thais-clanhall"
+                 *     }
+                 */
+                "application/json": components["schemas"]["HouseGone"];
+            };
+        };
+        /** @description Unknown house (`House not found.`) or floor (`Floor not found.`). */
+        HouseNotFound: {
+            headers: {
+                "X-API-Version": components["headers"]["XApiVersion"];
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "error": {
+                 *         "status_code": 404,
+                 *         "message": "House not found."
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         /** @description World or town tibia.com does not know (the search caption does not match), unknown house, or page out of the expected format. */
         HousesNotFound: {
             headers: {
@@ -2079,6 +2314,28 @@ export interface components {
                  *       "error": {
                  *         "status_code": 404,
                  *         "message": "Houses data not found!"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /**
+         * @description The houses bucket is not configured or does not answer and there is no recent index, or a file
+         *     does not match the index (a publication in progress). `Retry-After` suggests when to try again.
+         */
+        HousesUnavailable: {
+            headers: {
+                "Retry-After"?: number;
+                "X-API-Version": components["headers"]["XApiVersion"];
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "error": {
+                 *         "status_code": 503,
+                 *         "message": "Houses data unavailable."
                  *       }
                  *     }
                  */
@@ -2188,6 +2445,9 @@ export interface components {
          * @description Failure fetching or reading tibia.com. The response is closed. Generic message
          *     `Upstream request failed.` An empty highscore can also respond 520 with
          *     `Error when getting Hightscore ranks category: (...)`.
+         *     When the API itself holds the read back (read ceiling, or a pause after a Cloudflare
+         *     challenge, 429, 403 or 503 from tibia.com), the answer carries `Retry-After` and
+         *     `Cache-Control: no-store`.
          */
         UpstreamFailed: {
             headers: {
@@ -2196,6 +2456,8 @@ export interface components {
                 "RateLimit-Limit": components["headers"]["RateLimitLimit"];
                 "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
                 "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                /** @description Seconds until the API reads tibia.com again. Only when the read was held back. */
+                "Retry-After"?: number;
                 "X-API-Version": components["headers"]["XApiVersion"];
                 [name: string]: unknown;
             };
@@ -2269,6 +2531,8 @@ export interface components {
         HouseID: number;
         /** @description Page order. Any other value responds 400 `Unknown order.`. */
         HouseOrder: "name" | "size" | "rent" | "bid" | "end";
+        /** @description House slug from the list: lower-case ASCII with hyphens. Another format is 400 `Invalid house.`. */
+        HouseSlug: string;
         /** @description Only auctioned or only rented houses. Empty brings all. Any other value responds 400 `Unknown state.`. */
         HouseState: "auctioned" | "rented";
         /** @description Town, such as Thais or Liberty Bay. Case-insensitive for the known towns. `/`, `\`, `?`, `#`, `&` and `%` respond 400. */
@@ -2292,13 +2556,23 @@ export interface components {
     requestBodies: never;
     headers: {
         CacheControl: string;
+        /** @description The 520 answer of this route is deprecated since this date (RFC 9745). Only on that 520, and only while a sunset date is set. */
+        Deprecation: string;
+        /** @description Where the deprecation is documented. */
+        DeprecationLink: string;
         ETag: string;
         RateLimitLimit: number;
         RateLimitRemaining: number;
         /** @description Unix time at which the window resets. */
         RateLimitReset: number;
+        /** @description From this date the 520 answer of this route becomes 503 with Retry-After (RFC 8594). */
+        Sunset: string;
         /** @description API version. */
         XApiVersion: string;
+        /** @description Seconds since the profile behind this answer was read from tibia.com. Profiles are cached: fresh for 5 minutes, then served stale while one refresh runs in the background. */
+        XUmanthirDataAge: number;
+        /** @description `fresh` (younger than 5 minutes) or `stale` (older; a refresh is already running, or tibia.com could not be read). */
+        XUmanthirDataState: "fresh" | "stale";
     };
     pathItems: never;
 }
@@ -2325,6 +2599,8 @@ export interface operations {
                     "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
                     "RateLimit-Reset": components["headers"]["RateLimitReset"];
                     "X-API-Version": components["headers"]["XApiVersion"];
+                    "X-Umanthir-Data-Age": components["headers"]["XUmanthirDataAge"];
+                    "X-Umanthir-Data-State": components["headers"]["XUmanthirDataState"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2377,7 +2653,7 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
             502: components["responses"]["BadGateway"];
             503: components["responses"]["Maintenance"];
-            520: components["responses"]["UpstreamFailed"];
+            520: components["responses"]["CharacterUpstreamFailed"];
         };
     };
     getDromeRotations: {
@@ -4071,7 +4347,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Profile data and the online flag. */
+            /** @description Profile data and the online flag. The world list comes from the cache shared with `GET /v2/tools/online` (fresh for 30 s). `X-Umanthir-Data-Age` is the age of the older part, profile or world list; `X-Umanthir-Data-State` is `stale` when either one is. */
             200: {
                 headers: {
                     "Cache-Control": components["headers"]["CacheControl"];
@@ -4080,6 +4356,8 @@ export interface operations {
                     "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
                     "RateLimit-Reset": components["headers"]["RateLimitReset"];
                     "X-API-Version": components["headers"]["XApiVersion"];
+                    "X-Umanthir-Data-Age": components["headers"]["XUmanthirDataAge"];
+                    "X-Umanthir-Data-State": components["headers"]["XUmanthirDataState"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -4124,7 +4402,98 @@ export interface operations {
             };
             429: components["responses"]["TooManyRequests"];
             503: components["responses"]["Maintenance"];
-            520: components["responses"]["UpstreamFailed"];
+            520: components["responses"]["CharacterUpstreamFailed"];
+        };
+    };
+    getServerSave: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description IANA time zone. The slash may be literal or %2F: America/Sao_Paulo, America%2FSao_Paulo, UTC. */
+                timeZone: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The next server save, in the zone and in UTC, and how long until it. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: date-time
+                         * @example 2026-11-09T06:00:00-03:00
+                         */
+                        next_server_save: string;
+                        /**
+                         * Format: date-time
+                         * @example 2026-11-09T09:00:00Z
+                         */
+                        next_server_save_utc: string;
+                        /** @example 06:00 */
+                        server_save_time: string;
+                        time_until: {
+                            /** @example 13 */
+                            hours: number;
+                            /** @example 39 */
+                            minutes: number;
+                            /** @example 13 hours, 39 minutes */
+                            text: string;
+                            /** @example 49140 */
+                            total_seconds: number;
+                        };
+                        /** @example America/Sao_Paulo */
+                        time_zone: string;
+                        /** @example -03:00 */
+                        utc_offset: string;
+                    };
+                };
+            };
+            /** @description Not the shape of an IANA name, or a zone that is not allowed, such as Local. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "status_code": 400,
+                     *         "message": "Invalid time zone."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such time zone. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": {
+                     *         "status_code": 404,
+                     *         "message": "Time zone not found."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            429: components["responses"]["TooManyRequests"];
         };
     };
     getRawSkills: {
@@ -4375,6 +4744,124 @@ export interface operations {
             };
             429: components["responses"]["TooManyRequests"];
             503: components["responses"]["WikiUnavailable"];
+        };
+    };
+    getWikiHouses: {
+        parameters: {
+            query?: {
+                /** @description `true` lists only guildhalls, `false` only houses. Another value is 400 `Invalid filter.`. */
+                guildhall?: "true" | "false";
+                /** @description Town, without case (`thais`). An unknown town returns an empty list. */
+                town?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The houses, by town and name. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientHouseList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["HousesUnavailable"];
+        };
+    };
+    getWikiHouse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description House slug from the list: lower-case ASCII with hyphens. Another format is 400 `Invalid house.`. */
+                slug: components["parameters"]["HouseSlug"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The assembly JSON. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+            /** @description Not Modified. */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["HouseNotFound"];
+            410: components["responses"]["HouseGone"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["HousesUnavailable"];
+        };
+    };
+    getWikiHouseFloor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description House slug from the list: lower-case ASCII with hyphens. Another format is 400 `Invalid house.`. */
+                slug: components["parameters"]["HouseSlug"];
+                /** @description Floor, 0 to 15, without a leading zero. Another value is 400 `Invalid floor.`; a floor the house does not have is 404 `Floor not found.`. */
+                z: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The floor plan. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
+                };
+            };
+            /** @description Not Modified. */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["HouseNotFound"];
+            410: components["responses"]["HouseGone"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["HousesUnavailable"];
         };
     };
     getRashidLocation: {

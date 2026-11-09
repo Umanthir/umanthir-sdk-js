@@ -37,6 +37,7 @@ export class APIError extends UmanthirError {
     readonly apiMessage: string;
     readonly apiVersion: string | undefined;
     readonly body: unknown;
+    readonly code: string | undefined;
     readonly headers: Readonly<Record<string, string>>;
     readonly method: string;
     // (undocumented)
@@ -62,6 +63,12 @@ export interface APIErrorInit {
     status: number;
     // (undocumented)
     url: string;
+}
+
+// @public
+export class AuthenticationError extends APIError {
+    // (undocumented)
+    override readonly name: string;
 }
 
 // @public (undocumented)
@@ -97,6 +104,9 @@ export class CharactersResource extends Resource {
 }
 
 // @public (undocumented)
+export type ClientHouseList = components["schemas"]["ClientHouseList"];
+
+// @public (undocumented)
 export type ClosedPoll = components["schemas"]["ClosedPoll"];
 
 // @public (undocumented)
@@ -107,11 +117,16 @@ export interface components {
     // (undocumented)
     headers: {
         CacheControl: string;
+        Deprecation: string;
+        DeprecationLink: string;
         ETag: string;
         RateLimitLimit: number;
         RateLimitRemaining: number;
         RateLimitReset: number;
+        Sunset: string;
         XApiVersion: string;
+        XUmanthirDataAge: number;
+        XUmanthirDataState: "fresh" | "stale";
     };
     // (undocumented)
     parameters: {
@@ -121,6 +136,7 @@ export interface components {
         HighscoreCategory: components["schemas"]["HighscoreCategory"];
         HouseID: number;
         HouseOrder: "name" | "size" | "rent" | "bid" | "end";
+        HouseSlug: string;
         HouseState: "auctioned" | "rented";
         HouseTown: string;
         HouseType: "houses" | "guildhalls";
@@ -162,6 +178,24 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
+        CharacterUpstreamFailed: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                Deprecation: components["headers"]["Deprecation"];
+                ETag: components["headers"]["ETag"];
+                Link: components["headers"]["DeprecationLink"];
+                "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                "Retry-After"?: number;
+                Sunset: components["headers"]["Sunset"];
+                "X-API-Version": components["headers"]["XApiVersion"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         GuildsNotFound: {
             headers: {
                 "Cache-Control": components["headers"]["CacheControl"];
@@ -176,6 +210,24 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
+        HouseGone: {
+            headers: {
+                "X-API-Version": components["headers"]["XApiVersion"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["HouseGone"];
+            };
+        };
+        HouseNotFound: {
+            headers: {
+                "X-API-Version": components["headers"]["XApiVersion"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         HousesNotFound: {
             headers: {
                 "Cache-Control": components["headers"]["CacheControl"];
@@ -183,6 +235,16 @@ export interface components {
                 "RateLimit-Limit": components["headers"]["RateLimitLimit"];
                 "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
                 "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                "X-API-Version": components["headers"]["XApiVersion"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        HousesUnavailable: {
+            headers: {
+                "Retry-After"?: number;
                 "X-API-Version": components["headers"]["XApiVersion"];
                 [name: string]: unknown;
             };
@@ -256,6 +318,7 @@ export interface components {
                 "RateLimit-Limit": components["headers"]["RateLimitLimit"];
                 "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
                 "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                "Retry-After"?: number;
                 "X-API-Version": components["headers"]["XApiVersion"];
                 [name: string]: unknown;
             };
@@ -360,6 +423,12 @@ export interface components {
             vocation?: string;
             world?: string;
         };
+        ClientHouseList: {
+            client_version: string;
+            count: number;
+            houses: components["schemas"]["HouseSummary"][];
+            published_at: string;
+        };
         ClosedPoll: {
             ended_on: string;
             id: number;
@@ -423,6 +492,7 @@ export interface components {
         };
         Error: {
             error: {
+                code?: string;
                 message: string;
                 status_code: number;
             };
@@ -577,6 +647,14 @@ export interface components {
             type: "house" | "guildhall";
             world: string;
         };
+        HouseGone: {
+            error: {
+                message: string;
+                status_code: number;
+            };
+            reason: "removed" | "renamed";
+            replaced_by?: string;
+        };
         HouseList: {
             count: number;
             houses: components["schemas"]["HouseRow"][];
@@ -602,6 +680,21 @@ export interface components {
             state?: "rented" | "auctioned";
             text: string;
         };
+        HouseSummary: {
+            assembly: string;
+            client_version: string;
+            floors: {
+                image: string;
+                z: number;
+            }[];
+            guildhall: boolean;
+            id: number;
+            name: string;
+            rent: number;
+            slug: string;
+            town: string;
+            updated_at: string;
+        };
         HuntMember: {
             balance: number;
             damage: number;
@@ -621,6 +714,12 @@ export interface components {
             loot: number;
             members: components["schemas"]["HuntMember"][];
             remainder: number;
+            session: {
+                date: string | null;
+                duration: string | null;
+                duration_minutes: number | null;
+                start_time: string | null;
+            } | null;
             share: number;
             supplies: number;
             transfers: components["schemas"]["HuntTransfer"][];
@@ -1077,6 +1176,26 @@ export class FansitesResource extends Resource {
     list(options?: RequestOptions): Promise<Fansites>;
 }
 
+// @public
+export class ForbiddenError extends APIError {
+    // (undocumented)
+    override readonly name: string;
+}
+
+// @public
+export class GoneError extends APIError {
+    constructor(init: APIErrorInit);
+    // (undocumented)
+    override readonly name: string;
+    // (undocumented)
+    readonly reason: GoneReason;
+    // (undocumented)
+    readonly replacedBy: string | undefined;
+}
+
+// @public
+export type GoneReason = "removed" | "renamed" | "unknown";
+
 // @public (undocumented)
 export type Guild = components["schemas"]["Guild"];
 
@@ -1128,6 +1247,9 @@ export class HighscoresResource extends Resource {
 // @public (undocumented)
 export type House = components["schemas"]["House"];
 
+// @public
+export type HouseAssembly = Record<string, unknown>;
+
 // @public (undocumented)
 export type HouseAuction = components["schemas"]["HouseAuction"];
 
@@ -1136,6 +1258,9 @@ export type HouseBid = components["schemas"]["HouseBid"];
 
 // @public (undocumented)
 export type HouseDetail = components["schemas"]["HouseDetail"];
+
+// @public (undocumented)
+export type HouseGone = components["schemas"]["HouseGone"];
 
 // @public (undocumented)
 export type HouseList = components["schemas"]["HouseList"];
@@ -1157,6 +1282,9 @@ export class HousesResource extends Resource {
 
 // @public (undocumented)
 export type HouseStatus = components["schemas"]["HouseStatus"];
+
+// @public (undocumented)
+export type HouseSummary = components["schemas"]["HouseSummary"];
 
 // @public (undocumented)
 export type HuntMember = components["schemas"]["HuntMember"];
@@ -1386,6 +1514,8 @@ export interface operations {
                     "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
                     "RateLimit-Reset": components["headers"]["RateLimitReset"];
                     "X-API-Version": components["headers"]["XApiVersion"];
+                    "X-Umanthir-Data-Age": components["headers"]["XUmanthirDataAge"];
+                    "X-Umanthir-Data-State": components["headers"]["XUmanthirDataState"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -1410,7 +1540,7 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
             502: components["responses"]["BadGateway"];
             503: components["responses"]["Maintenance"];
-            520: components["responses"]["UpstreamFailed"];
+            520: components["responses"]["CharacterUpstreamFailed"];
         };
     };
     // (undocumented)
@@ -2216,6 +2346,8 @@ export interface operations {
                     "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
                     "RateLimit-Reset": components["headers"]["RateLimitReset"];
                     "X-API-Version": components["headers"]["XApiVersion"];
+                    "X-Umanthir-Data-Age": components["headers"]["XUmanthirDataAge"];
+                    "X-Umanthir-Data-State": components["headers"]["XUmanthirDataState"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2239,7 +2371,7 @@ export interface operations {
             };
             429: components["responses"]["TooManyRequests"];
             503: components["responses"]["Maintenance"];
-            520: components["responses"]["UpstreamFailed"];
+            520: components["responses"]["CharacterUpstreamFailed"];
         };
     };
     // (undocumented)
@@ -2455,6 +2587,63 @@ export interface operations {
         };
     };
     // (undocumented)
+    getServerSave: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                timeZone: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        next_server_save: string;
+                        next_server_save_utc: string;
+                        server_save_time: string;
+                        time_until: {
+                            hours: number;
+                            minutes: number;
+                            text: string;
+                            total_seconds: number;
+                        };
+                        time_zone: string;
+                        utc_offset: string;
+                    };
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    // (undocumented)
     getShareExperience: {
         parameters: {
             query?: never;
@@ -2587,6 +2776,117 @@ export interface operations {
             };
             429: components["responses"]["TooManyRequests"];
             503: components["responses"]["WikiUnavailable"];
+        };
+    };
+    // (undocumented)
+    getWikiHouse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: components["parameters"]["HouseSlug"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["HouseNotFound"];
+            410: components["responses"]["HouseGone"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["HousesUnavailable"];
+        };
+    };
+    // (undocumented)
+    getWikiHouseFloor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: components["parameters"]["HouseSlug"];
+                z: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
+                };
+            };
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["HouseNotFound"];
+            410: components["responses"]["HouseGone"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["HousesUnavailable"];
+        };
+    };
+    // (undocumented)
+    getWikiHouses: {
+        parameters: {
+            query?: {
+                guildhall?: "true" | "false";
+                town?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientHouseList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["HousesUnavailable"];
         };
     };
     // (undocumented)
@@ -2822,6 +3122,8 @@ export class RateLimitError extends APIError {
     override readonly name: string;
     // (undocumented)
     readonly rateLimit: RateLimitInfo;
+    // (undocumented)
+    readonly reason: RateLimitReason;
 }
 
 // @public
@@ -2830,6 +3132,9 @@ export interface RateLimitInfo {
     remaining: number | undefined;
     reset: number | undefined;
 }
+
+// @public
+export type RateLimitReason = "rate_limit" | "ip_limit" | "monthly_quota" | "daily_quota";
 
 // @public (undocumented)
 export type RawSkills = components["schemas"]["RawSkills"];
@@ -2907,6 +3212,9 @@ export type RotationPast = components["schemas"]["RotationPast"];
 export type Rotations = components["schemas"]["Rotations"];
 
 // @public
+export type ServerSave = operations["getServerSave"]["responses"][200]["content"]["application/json"];
+
+// @public
 export class ServiceUnavailableError extends APIError {
     constructor(init: APIErrorInit);
     // (undocumented)
@@ -2916,7 +3224,7 @@ export class ServiceUnavailableError extends APIError {
 }
 
 // @public
-export type ServiceUnavailableReason = "maintenance" | "busy" | "wiki_unavailable" | "unknown";
+export type ServiceUnavailableReason = "maintenance" | "busy" | "wiki_unavailable" | "unknown" | "houses_unavailable";
 
 // @public (undocumented)
 export type Share = components["schemas"]["Share"];
@@ -2955,6 +3263,7 @@ export class ToolsResource extends Resource {
     experienceGoal(targetLevel: number, from: ExperienceGoalFrom, options?: RequestOptions): Promise<ExperienceGoal>;
     levelForExperience(experiencePoints: number | bigint, options?: RequestOptions): Promise<ExperienceStatus>;
     rawSkills(params: RawSkillsOptions, options?: RequestOptions): Promise<RawSkills>;
+    serverSave(timeZone: string, options?: RequestOptions): Promise<ServerSave>;
     shareExperience(levels: number | readonly number[], options?: RequestOptions): Promise<ShareExperience>;
     splitHunt(analyzerText: string, options?: RequestOptions): Promise<HuntSplit>;
     vocationStatus(vocation: BaseVocation, level: number, options?: RequestOptions): Promise<VocationStatus>;
@@ -3052,6 +3361,12 @@ export type WikiCategoryCount = components["schemas"]["WikiCategoryCount"];
 // @public (undocumented)
 export type WikiCategoryList = components["schemas"]["WikiCategoryList"];
 
+// @public
+export interface WikiHouseListOptions {
+    guildhall?: boolean | undefined;
+    town?: string | undefined;
+}
+
 // @public (undocumented)
 export type WikiItem = components["schemas"]["WikiItem"];
 
@@ -3068,6 +3383,9 @@ export type WikiNamedValue = components["schemas"]["WikiNamedValue"];
 export class WikiResource extends Resource {
     categories(options?: RequestOptions): Promise<WikiCategoryList>;
     get(category: string, name: string, options?: RequestOptions): Promise<WikiItem>;
+    house(slug: string, options?: RequestOptions): Promise<HouseAssembly>;
+    houseFloor(slug: string, z: number, options?: RequestOptions): Promise<Uint8Array>;
+    houses(filters?: WikiHouseListOptions, options?: RequestOptions): Promise<ClientHouseList>;
     list(category: string, options?: RequestOptions): Promise<WikiItemList>;
     rashidLocation(options?: RequestOptions): Promise<RashidLocation>;
 }
