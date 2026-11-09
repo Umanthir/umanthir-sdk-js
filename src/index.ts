@@ -24,6 +24,7 @@ export {
   UpstreamError,
   ValidationError,
 } from "./errors.js";
+export { type FormatDateOptions, formatDate } from "./format-date.js";
 export type { components, operations } from "./generated/openapi.js";
 export type * from "./generated/schemas.js";
 export type { Loose, OperationPath, OperationQuery, Resource } from "./resources/base.js";

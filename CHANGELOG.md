@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `formatDate(date, pattern, { timeZone })`: formats the dates of the API, with a 12-hour clock
+  and AM/PM (`hh`) or a 24-hour clock (`HH`).
 - API contract 2.7.0.
 - `tools.serverSave(timeZone)`: the next server save in an IANA time zone and how long until it.
 - `wiki.houses()`, `wiki.house(slug)` and `wiki.houseFloor(slug, z)`: the houses published from the

@@ -16,6 +16,7 @@ Official SDK for the [Umanthir API](https://api.umanthir.com), for Node.js and b
 - [Client options](#client-options)
 - [Resources](#resources)
 - [Errors](#errors)
+- [Formatting dates](#formatting-dates)
 - [Warnings](#warnings)
 - [Debug logs and hooks](#debug-logs-and-hooks)
 - [Timeouts, retries and cancellation](#timeouts-retries-and-cancellation)
@@ -271,6 +272,46 @@ try {
 
 In the browser bundle the classes are available on the global: `Umanthir.NotFoundError`,
 `Umanthir.RateLimitError`, and so on.
+
+## Formatting dates
+
+Dates come from the API as text in UTC, such as `2011-01-07T03:41:16Z`. `formatDate` turns one into
+the pattern you want:
+
+```ts
+import { formatDate, Umanthir } from "@umanthir/sdk";
+
+const client = new Umanthir();
+const character = await client.characters.get("Njorn");
+const created = character.account_information?.created; // not every character shows it
+
+if (created !== undefined) {
+  formatDate(created, "dd/MM/yyyy"); // 07/01/2011
+  formatDate(created, "yyyy-MM-dd"); // 2011-01-07
+  formatDate(created, "dd/MM/yyyy - hh:mm"); // 07/01/2011 - 03:41 AM
+  formatDate(created, "dd/MM/yyyy - HH:mm"); // 07/01/2011 - 03:41
+  formatDate(created, "dd/MM/yyyy - hh:mm", { timeZone: "America/Sao_Paulo" });
+}
+```
+
+| Token  | Meaning                         | Example |
+| ------ | ------------------------------- | ------- |
+| `yyyy` | Year                            | `2011`  |
+| `MM`   | Month                           | `01`    |
+| `dd`   | Day                             | `07`    |
+| `hh`   | Hour, 12-hour clock, with AM/PM | `03`    |
+| `HH`   | Hour, 24-hour clock             | `15`    |
+| `mm`   | Minutes                         | `41`    |
+| `ss`   | Seconds                         | `16`    |
+| `a`    | AM or PM                        | `AM`    |
+- A pattern with `hh` and no `a` ends with ` AM` or ` PM`. Use `a` to put it somewhere else.
+- Without `timeZone`, the result is in UTC, so it is the same on every machine.
+- A date without a time, such as a guild's `founded`, never changes day with the time zone. Asking
+  for its hour throws `ValidationError`.
+- Text between single quotes is kept: `dd/MM 'at' hh:mm`. Any other letter, such as `DD/MM/YYYY`,
+  throws `ValidationError`.
+
+In the browser bundle it is `Umanthir.formatDate`.
 
 ## Warnings
 

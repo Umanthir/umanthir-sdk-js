@@ -1183,6 +1183,14 @@ export class ForbiddenError extends APIError {
 }
 
 // @public
+export function formatDate(date: string | Date, pattern: string, options?: FormatDateOptions): string;
+
+// @public
+export interface FormatDateOptions {
+    timeZone?: string | undefined;
+}
+
+// @public
 export class GoneError extends APIError {
     constructor(init: APIErrorInit);
     // (undocumented)

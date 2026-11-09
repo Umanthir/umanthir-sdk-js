@@ -2,12 +2,14 @@
  * Entry of the browser bundle (`umanthir.min.js`).
  *
  * The global `Umanthir` is the client class itself, so `new Umanthir()` works,
- * and the error classes hang from it (`Umanthir.NotFoundError`, ...).
+ * and the error classes and helpers hang from it (`Umanthir.NotFoundError`, `Umanthir.formatDate`).
  */
 import { Umanthir } from "./client.js";
 import * as errors from "./errors.js";
+import { formatDate } from "./format-date.js";
 
-const ERROR_CLASSES = {
+const STATICS = {
+  formatDate,
   UmanthirError: errors.UmanthirError,
   ValidationError: errors.ValidationError,
   ConnectionError: errors.ConnectionError,
@@ -24,7 +26,7 @@ const ERROR_CLASSES = {
   ServiceUnavailableError: errors.ServiceUnavailableError,
 };
 
-for (const [name, value] of Object.entries(ERROR_CLASSES)) {
+for (const [name, value] of Object.entries(STATICS)) {
   Object.defineProperty(Umanthir, name, { value, enumerable: true });
 }
 
