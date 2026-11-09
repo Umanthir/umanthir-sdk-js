@@ -3,6 +3,7 @@
 import { describe, expectTypeOf, it } from "vitest";
 import {
   type Character,
+  formatDate,
   type HighscoreListOptions,
   NotFoundError,
   RateLimitError,
@@ -14,6 +15,16 @@ import {
 declare const metrics: { increment(name: string): void };
 
 describe("README examples", () => {
+  it("formatDate compiles", async () => {
+    const client = new Umanthir();
+    const character = await client.characters.get("Njorn");
+    const created = character.account_information?.created;
+    if (created !== undefined) {
+      expectTypeOf(formatDate(created, "dd/MM/yyyy - hh:mm")).toEqualTypeOf<string>();
+      formatDate(created, "dd/MM/yyyy", { timeZone: "America/Sao_Paulo" });
+    }
+  });
+
   it("compile", () => {
     async function quickStart() {
       const client = new Umanthir();
