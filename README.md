@@ -411,6 +411,7 @@ const filters: HighscoreListOptions = { vocation: "sorcerers", category: "magicl
 
 | SDK          | Umanthir API        |
 | ------------ | ------------------- |
+| 1.1.0        | v2 (contract 2.7.0) |
 | 1.0.0        | v2 (contract 2.4.2) |
 | 0.1.0-beta.1 | v2 (contract 2.4.2) |
 
