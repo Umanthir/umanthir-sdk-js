@@ -6,6 +6,7 @@ import type {
   Bosses,
   Character,
   CharacterInfo,
+  ClientHouseList,
   CreatureListOptions,
   Creatures,
   Death,
@@ -14,12 +15,15 @@ import type {
   ExperienceTable,
   HighscoreCategory,
   HighscorePage,
+  HuntSplit,
   MapList,
   Online,
   OnlineBatch,
   RashidLocation,
+  ServerSave,
   ShareExperience,
   SpellList,
+  Umanthir,
   VocationStatus,
   WikiCategoryList,
   WikiItem,
@@ -34,7 +38,9 @@ describe("public schema types", () => {
   });
 
   it("ErrorBody is the API error envelope", () => {
-    expectTypeOf<ErrorBody>().toEqualTypeOf<{ error: { message: string; status_code: number } }>();
+    expectTypeOf<ErrorBody>().toEqualTypeOf<{
+      error: { status_code: number; message: string; code?: string };
+    }>();
   });
 
   it("enums become string unions", () => {
@@ -172,5 +178,21 @@ describe("Wiki method types", () => {
     expectTypeOf(c.wiki.categories).returns.toEqualTypeOf<Promise<WikiCategoryList>>();
     expectTypeOf(c.wiki.list).returns.toEqualTypeOf<Promise<WikiItemList>>();
     expectTypeOf(c.wiki.get).returns.toEqualTypeOf<Promise<WikiItem>>();
+  });
+});
+
+describe("contract 2.7.0", () => {
+  it("HuntSplit has a nullable session", () => {
+    expectTypeOf<NonNullable<HuntSplit["session"]>["date"]>().toEqualTypeOf<string | null>();
+  });
+
+  it("the new methods have their result types", () => {
+    expectTypeOf<ReturnType<Umanthir["tools"]["serverSave"]>>().toEqualTypeOf<
+      Promise<ServerSave>
+    >();
+    expectTypeOf<ReturnType<Umanthir["wiki"]["houses"]>>().toEqualTypeOf<
+      Promise<ClientHouseList>
+    >();
+    expectTypeOf<ReturnType<Umanthir["wiki"]["houseFloor"]>>().toEqualTypeOf<Promise<Uint8Array>>();
   });
 });

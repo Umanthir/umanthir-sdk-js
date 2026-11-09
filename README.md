@@ -16,6 +16,7 @@ Official SDK for the [Umanthir API](https://api.umanthir.com), for Node.js and b
 - [Client options](#client-options)
 - [Resources](#resources)
 - [Errors](#errors)
+- [Formatting dates](#formatting-dates)
 - [Warnings](#warnings)
 - [Debug logs and hooks](#debug-logs-and-hooks)
 - [Timeouts, retries and cancellation](#timeouts-retries-and-cancellation)
@@ -179,6 +180,7 @@ const houses = await client.houses.list("Antica", "Thais", { state: "auctioned" 
 | `tools.experienceForLevel(level)`                                | `LevelExperience`                          |
 | `tools.levelForExperience(experience)`                           | `ExperienceStatus`                         |
 | `tools.experienceGoal(targetLevel, { level } \| { experience })` | `ExperienceGoal`                           |
+| `tools.serverSave(timeZone)`                                     | `ServerSave`                               |
 | `tools.splitHunt(analyzerText)`                                  | `HuntSplit`                                |
 
 `online.list` reads up to 100 worlds in one call and supports ETags: an unchanged list answers
@@ -193,21 +195,44 @@ etag = res.etag;
 
 `levelForExperience` and `experienceGoal` accept a `bigint` for experience above 2^53.
 `splitHunt` takes the text copied from the Party Hunt Analyzer; it is sent once (never retried) and
-never logged.
+never logged. Its result has `session` with the hunt `date`, `start_time` and `duration`, as the
+game shows them, or `null` when the text does not bring those lines.
+
+`serverSave` takes an IANA time zone and answers the hour of the next server save there and how
+long until it:
+
+```ts
+const save = await client.tools.serverSave("America/Sao_Paulo");
+console.log(save.server_save_time, save.time_until.text); // 06:00 13 hours, 39 minutes
+```
 
 ### Wiki
 
 Data from TibiaWiki BR (texts in Portuguese).
 
-| Method                     | Returns            |
-| -------------------------- | ------------------ |
-| `wiki.rashidLocation()`    | `RashidLocation`   |
-| `wiki.categories()`        | `WikiCategoryList` |
-| `wiki.list(category)`      | `WikiItemList`     |
-| `wiki.get(category, name)` | `WikiItem`         |
+| Method                             | Returns            |
+| ---------------------------------- | ------------------ |
+| `wiki.rashidLocation()`            | `RashidLocation`   |
+| `wiki.categories()`                | `WikiCategoryList` |
+| `wiki.list(category)`              | `WikiItemList`     |
+| `wiki.get(category, name)`         | `WikiItem`         |
+| `wiki.houses({ town, guildhall })` | `ClientHouseList`  |
+| `wiki.house(slug)`                 | `HouseAssembly`    |
+| `wiki.houseFloor(slug, z)`         | `Uint8Array` (PNG) |
 
 ```ts
 const axe = await client.wiki.get("axes", "hellforged axe");
+```
+
+`wiki.houses` lists the houses published from the game client, which are not the auctions of
+`houses.list`. A house that left the client throws `GoneError`; a renamed one has its new slug in
+`replacedBy`.
+
+```ts
+import { writeFile } from "node:fs/promises";
+
+const png = await client.wiki.houseFloor("thais-clanhall", 7);
+await writeFile("floor-7.png", png);
 ```
 
 ## Errors
@@ -216,18 +241,21 @@ Every error thrown by the SDK extends `UmanthirError`. Errors from the API exten
 carries `status`, `apiMessage` (the API's `error.message`), `method`, `url`, `headers`, `body`,
 `retryAfter` (seconds) and `apiVersion`.
 
-| Class                     | When                                                                              |
-| ------------------------- | --------------------------------------------------------------------------------- |
-| `ValidationError`         | An argument was rejected before sending the request (bad name, page, level, ...). |
-| `ConnectionError`         | The API could not be reached (DNS, TLS, connection reset, offline).               |
-| `TimeoutError`            | An attempt took longer than `timeout` (extends `ConnectionError`).                |
-| `AbortError`              | The request was cancelled through your `signal`.                                  |
-| `BadRequestError`         | 400: the API rejected an argument (`Unknown vocation.`, `Invalid page.`, ...).    |
-| `NotFoundError`           | 404: character, guild, world, house, item or route not found.                     |
-| `RateLimitError`          | 429: rate limit exceeded; `rateLimit` holds `{ limit, remaining, reset }`.        |
-| `UpstreamError`           | 502 or 520: the API could not read tibia.com.                                     |
-| `ServiceUnavailableError` | 503; `reason` is `"maintenance"`, `"busy"`, `"wiki_unavailable"` or `"unknown"`.  |
-| `APIError`                | Any other error status.                                                           |
+| Class                     | When                                                                                                     |
+| ------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `ValidationError`         | An argument was rejected before sending the request (bad name, page, level, ...).                        |
+| `ConnectionError`         | The API could not be reached (DNS, TLS, connection reset, offline).                                      |
+| `TimeoutError`            | An attempt took longer than `timeout` (extends `ConnectionError`).                                       |
+| `AbortError`              | The request was cancelled through your `signal`.                                                         |
+| `BadRequestError`         | 400: the API rejected an argument (`Unknown vocation.`, `Invalid page.`, ...).                           |
+| `AuthenticationError`     | 401: the `apiKey` is malformed, unknown, revoked or expired.                                             |
+| `ForbiddenError`          | 403: a site key used from another origin (`code: "origin_not_allowed"`).                                 |
+| `NotFoundError`           | 404: character, guild, world, house, item or route not found.                                            |
+| `GoneError`               | 410: the house left the client; `reason`, and `replacedBy` when renamed.                                 |
+| `RateLimitError`          | 429: limit exceeded; `reason`, and `rateLimit` holds `{ limit, remaining, reset }`.                      |
+| `UpstreamError`           | 502 or 520: the API could not read tibia.com.                                                            |
+| `ServiceUnavailableError` | 503; `reason` is `"maintenance"`, `"busy"`, `"wiki_unavailable"`, `"houses_unavailable"` or `"unknown"`. |
+| `APIError`                | Any other error status.                                                                                  |
 
 ```ts
 import { RateLimitError, ServiceUnavailableError } from "@umanthir/sdk";
@@ -244,6 +272,46 @@ try {
 
 In the browser bundle the classes are available on the global: `Umanthir.NotFoundError`,
 `Umanthir.RateLimitError`, and so on.
+
+## Formatting dates
+
+Dates come from the API as text in UTC, such as `2011-01-07T03:41:16Z`. `formatDate` turns one into
+the pattern you want:
+
+```ts
+import { formatDate, Umanthir } from "@umanthir/sdk";
+
+const client = new Umanthir();
+const character = await client.characters.get("Njorn");
+const created = character.account_information?.created; // not every character shows it
+
+if (created !== undefined) {
+  formatDate(created, "dd/MM/yyyy"); // 07/01/2011
+  formatDate(created, "yyyy-MM-dd"); // 2011-01-07
+  formatDate(created, "dd/MM/yyyy - hh:mm"); // 07/01/2011 - 03:41 AM
+  formatDate(created, "dd/MM/yyyy - HH:mm"); // 07/01/2011 - 03:41
+  formatDate(created, "dd/MM/yyyy - hh:mm", { timeZone: "America/Sao_Paulo" });
+}
+```
+
+| Token  | Meaning                         | Example |
+| ------ | ------------------------------- | ------- |
+| `yyyy` | Year                            | `2011`  |
+| `MM`   | Month                           | `01`    |
+| `dd`   | Day                             | `07`    |
+| `hh`   | Hour, 12-hour clock, with AM/PM | `03`    |
+| `HH`   | Hour, 24-hour clock             | `15`    |
+| `mm`   | Minutes                         | `41`    |
+| `ss`   | Seconds                         | `16`    |
+| `a`    | AM or PM                        | `AM`    |
+- A pattern with `hh` and no `a` ends with ` AM` or ` PM`. Use `a` to put it somewhere else.
+- Without `timeZone`, the result is in UTC, so it is the same on every machine.
+- A date without a time, such as a guild's `founded`, never changes day with the time zone. Asking
+  for its hour throws `ValidationError`.
+- Text between single quotes is kept: `dd/MM 'at' hh:mm`. Any other letter, such as `DD/MM/YYYY`,
+  throws `ValidationError`.
+
+In the browser bundle it is `Umanthir.formatDate`.
 
 ## Warnings
 
@@ -274,7 +342,7 @@ const client = new Umanthir({
 const client = new Umanthir({ debug: true });
 await client.characters.get("Njorn");
 // [umanthir] → GET https://api.umanthir.com/v2/community/characters/Njorn (attempt 1)
-// [umanthir] ← 200 GET https://api.umanthir.com/v2/community/characters/Njorn 182ms X-API-Version=2.4.2 RateLimit-Remaining=59
+// [umanthir] ← 200 GET https://api.umanthir.com/v2/community/characters/Njorn 182ms X-API-Version=2.7.0 RateLimit-Remaining=59
 ```
 
 In Node.js, `UMANTHIR_LOG=debug node app.js` enables it without code changes. Credentials are always
@@ -316,6 +384,14 @@ The Umanthir API can be used without a key. When you have one, pass it as `apiKe
 Do not ship a key in browser code: anyone using the page can read it. The SDK warns with
 `API_KEY_IN_BROWSER` when it sees one. Keep keys on your server and call the API from there.
 
+The exception is a site key, a key the Umanthir team issues for one website. It is meant for the
+browser: the API accepts it only from that site's exact origins, with a cap per visitor IP. The
+warning still appears, and you can ignore it for a site key.
+
+With a key, the limits are the ones of your plan: a peak per minute per key and a monthly quota per
+application, and `RateLimitError.reason` tells them apart (`rate_limit`, `ip_limit`,
+`monthly_quota`, `daily_quota`). A used-up quota is not retried: `retryAfter` says when it returns.
+
 ## TypeScript
 
 Every response type is exported with the name of its schema in the API contract (`Character`,
@@ -335,6 +411,7 @@ const filters: HighscoreListOptions = { vocation: "sorcerers", category: "magicl
 
 | SDK          | Umanthir API        |
 | ------------ | ------------------- |
+| 1.1.0        | v2 (contract 2.7.0) |
 | 1.0.0        | v2 (contract 2.4.2) |
 | 0.1.0-beta.1 | v2 (contract 2.4.2) |
 

@@ -27,12 +27,24 @@ test("the global Umanthir is the client class with the error classes", async ({ 
     return {
       type: typeof U,
       version: typeof U.version,
-      errors: ["NotFoundError", "RateLimitError", "ValidationError", "UmanthirError"].every(
-        (n) => typeof U[n] === "function",
-      ),
+      formatDate: (U.formatDate as (d: string, p: string) => string)("2011-01-07", "dd/MM/yyyy"),
+      errors: [
+        "NotFoundError",
+        "RateLimitError",
+        "ValidationError",
+        "UmanthirError",
+        "AuthenticationError",
+        "ForbiddenError",
+        "GoneError",
+      ].every((n) => typeof U[n] === "function"),
     };
   });
-  expect(info).toEqual({ type: "function", version: "string", errors: true });
+  expect(info).toEqual({
+    type: "function",
+    version: "string",
+    formatDate: "07/01/2011",
+    errors: true,
+  });
 });
 
 test("README example: new Umanthir().characters.get(...).then(...)", async ({ page }) => {

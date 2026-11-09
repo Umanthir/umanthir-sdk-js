@@ -7,6 +7,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-08
+
+Covers the Umanthir API v2 contract 2.7.0 and adds a date formatter. Nothing is removed from the
+public API.
+
+### Added
+
+- `formatDate(date, pattern, { timeZone })`: formats the dates of the API, with a 12-hour clock
+  and AM/PM (`hh`) or a 24-hour clock (`HH`).
+- API contract 2.7.0.
+- `tools.serverSave(timeZone)`: the next server save in an IANA time zone and how long until it.
+- `wiki.houses()`, `wiki.house(slug)` and `wiki.houseFloor(slug, z)`: the houses published from the
+  game client, their assembly JSON and one transparent PNG per floor.
+- `session` in the result of `tools.splitHunt`: hunt date, start time and duration.
+- `AuthenticationError` (401), `ForbiddenError` (403) and `GoneError` (410), also on the browser
+  global.
+- `APIError.code`, `RateLimitError.reason` and the `houses_unavailable` reason of
+  `ServiceUnavailableError`.
+
 ## [1.0.0] - 2026-11-02
 
 First stable release. It covers every data route of the Umanthir API v2 (contract 2.4.2) and keeps
@@ -59,6 +78,7 @@ First pre-release, published with the `next` dist-tag.
 - Wiki resources: `wiki.rashidLocation()`, `wiki.categories()`, `wiki.list(category)` and
   `wiki.get(category, name)`.
 
-[Unreleased]: https://github.com/Umanthir/umanthir-sdk-js/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Umanthir/umanthir-sdk-js/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Umanthir/umanthir-sdk-js/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Umanthir/umanthir-sdk-js/compare/v0.1.0-beta.1...v1.0.0
 [0.1.0-beta.1]: https://github.com/Umanthir/umanthir-sdk-js/releases/tag/v0.1.0-beta.1
