@@ -7,6 +7,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-08
+
+Covers the Umanthir API v2 contract 2.7.0 and adds a date formatter. Nothing is removed from the
+public API.
+
 ### Added
 
 - `formatDate(date, pattern, { timeZone })`: formats the dates of the API, with a 12-hour clock
@@ -73,6 +78,7 @@ First pre-release, published with the `next` dist-tag.
 - Wiki resources: `wiki.rashidLocation()`, `wiki.categories()`, `wiki.list(category)` and
   `wiki.get(category, name)`.
 
-[Unreleased]: https://github.com/Umanthir/umanthir-sdk-js/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Umanthir/umanthir-sdk-js/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Umanthir/umanthir-sdk-js/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Umanthir/umanthir-sdk-js/compare/v0.1.0-beta.1...v1.0.0
 [0.1.0-beta.1]: https://github.com/Umanthir/umanthir-sdk-js/releases/tag/v0.1.0-beta.1
