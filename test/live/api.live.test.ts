@@ -42,7 +42,7 @@ describe("live: Umanthir API", () => {
 
   it("wiki creatures, NPCs, spells and achievements return the wiki data", async () => {
     expect((await client.wiki.creature("demon")).name.toLowerCase()).toBe("demon");
-    expect((await client.wiki.spell("exura")).name).toBeTruthy();
+    expect((await client.wiki.spell("light healing")).words).toBe("exura");
     expect((await client.wiki.npc("rashid")).name.toLowerCase()).toBe("rashid");
     expect((await client.wiki.achievement("ashes to dust")).name.toLowerCase()).toBe(
       "ashes to dust",
