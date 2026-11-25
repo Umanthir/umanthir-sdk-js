@@ -162,7 +162,7 @@ export class Umanthir {
   public readonly online: OnlineResource;
   /** Calculators: experience, vocations, skills, exercise weapons and party hunts. */
   public readonly tools: ToolsResource;
-  /** TibiaWiki BR data: Rashid, item categories and items. */
+  /** Wiki data: Rashid, TibiaWiki BR items, creatures, NPCs, spells and achievements, Tibia items, sprites and houses. */
   public readonly wiki: WikiResource;
 
   readonly #hasApiKey: boolean;

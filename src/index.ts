@@ -61,5 +61,10 @@ export type {
   ServerSave,
   ToolsResource,
 } from "./resources/tools.js";
-export type { HouseAssembly, WikiHouseListOptions, WikiResource } from "./resources/wiki.js";
+export type {
+  HouseAssembly,
+  RawItemSearchOptions,
+  WikiHouseListOptions,
+  WikiResource,
+} from "./resources/wiki.js";
 export { VERSION } from "./version.js";

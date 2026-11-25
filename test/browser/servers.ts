@@ -98,6 +98,9 @@ export async function startApi() {
       } else {
         json(res, 200, { fetched_at: "x", worlds: [], unknown: [], failed: [] }, { ETag: '"e1"' });
       }
+    } else if (url.pathname === `/v2/wiki/sprites/${"a".repeat(64)}.png`) {
+      res.writeHead(200, { "Access-Control-Allow-Origin": "*", "Content-Type": "image/png" });
+      res.end(Buffer.from([0x89, 0x50, 0x4e, 0x47]));
     } else if (url.pathname === "/v2/tools/hunt/split" && req.method === "POST") {
       json(res, 200, { members: [], received: body.length });
     } else {
