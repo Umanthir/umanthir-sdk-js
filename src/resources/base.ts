@@ -35,6 +35,11 @@ export abstract class Resource {
     return this.#transport.request<T>(request);
   }
 
+  /** @internal Absolute URL of a route on the configured base URL, without sending a request. */
+  protected href(path: string): string {
+    return this.#transport.buildURL(path).href;
+  }
+
   /** @internal */
   protected warn(warning: UmanthirWarning): void {
     this.#transport.warn(warning);

@@ -1,6 +1,6 @@
 {
   "name": "@umanthir/sdk",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Official JavaScript/TypeScript SDK for the Umanthir API, for Node.js and browsers.",
   "license": "MIT",
   "author": "Umanthir",
@@ -71,15 +71,15 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "0.18.5",
-    "@biomejs/biome": "2.6.3",
-    "@microsoft/api-extractor": "7.59.4",
-    "@playwright/test": "1.64.1",
+    "@biomejs/biome": "2.6.8",
+    "@microsoft/api-extractor": "7.60.1",
+    "@playwright/test": "1.65.1",
     "@size-limit/file": "14.3.0",
-    "@vitest/coverage-v8": "5.0.5",
+    "@vitest/coverage-v8": "5.1.0",
     "publint": "0.3.25",
     "size-limit": "14.3.0",
-    "tsdown": "0.23.2",
+    "tsdown": "0.23.7",
     "typescript": "7.0.2",
-    "vitest": "5.0.5"
+    "vitest": "5.1.0"
   }
 }

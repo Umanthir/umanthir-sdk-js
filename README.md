@@ -2,10 +2,9 @@
 
 Official SDK for the [Umanthir API](https://api.umanthir.com), for Node.js and browsers.
 
-> **Status: pre-release.** The package is under active development and is not published to npm yet.
 - Every data route of the Umanthir API v2, with responses typed from the API contract
 - ESM, CommonJS and type declarations for Node.js and bundlers
-- Browser bundle `umanthir.min.js` (about 7 kB gzip) exposing the global `Umanthir`
+- Browser bundle `umanthir.min.js` (about 9 kB gzip) exposing the global `Umanthir`
 - Typed errors, warnings, timeouts, retries with `Retry-After`, cancellation and opt-in debug logs
 - Zero runtime dependencies
 
@@ -208,25 +207,41 @@ console.log(save.server_save_time, save.time_until.text); // 06:00 13 hours, 39 
 
 ### Wiki
 
-Data from TibiaWiki BR (texts in Portuguese).
+Data from TibiaWiki BR (texts in Portuguese), plus Tibia items, sprites and houses.
 
-| Method                             | Returns            |
-| ---------------------------------- | ------------------ |
-| `wiki.rashidLocation()`            | `RashidLocation`   |
-| `wiki.categories()`                | `WikiCategoryList` |
-| `wiki.list(category)`              | `WikiItemList`     |
-| `wiki.get(category, name)`         | `WikiItem`         |
-| `wiki.houses({ town, guildhall })` | `ClientHouseList`  |
-| `wiki.house(slug)`                 | `HouseAssembly`    |
-| `wiki.houseFloor(slug, z)`         | `Uint8Array` (PNG) |
+| Method                                           | Returns               |
+| ------------------------------------------------ | --------------------- |
+| `wiki.rashidLocation()`                          | `RashidLocation`      |
+| `wiki.categories()`                              | `WikiCategoryList`    |
+| `wiki.list(category)`                            | `WikiItemList`        |
+| `wiki.get(category, name)`                       | `WikiItem`            |
+| `wiki.houses({ town, guildhall })`               | `ClientHouseList`     |
+| `wiki.house(slug)`                               | `HouseAssembly`       |
+| `wiki.houseFloor(slug, z)`                       | `Uint8Array` (PNG)    |
+| `wiki.creatures()`                               | `WikiCreatureList`    |
+| `wiki.creature(name)`                            | `WikiCreature`        |
+| `wiki.npcs()`                                    | `WikiNPCList`         |
+| `wiki.npc(name)`                                 | `WikiNPC`             |
+| `wiki.spells()`                                  | `WikiSpellList`       |
+| `wiki.spell(name)`                               | `WikiSpell`           |
+| `wiki.achievements()`                            | `WikiAchievementList` |
+| `wiki.achievement(name)`                         | `WikiAchievement`     |
+| `wiki.rawItems({ name, category, named, page })` | `ItemSearch`          |
+| `wiki.rawItemsByIds(ids)`                        | `ItemBatch`           |
+| `wiki.rawItem(id)`                               | `ClientItem`          |
+| `wiki.itemImageUrl(id)`                          | `string` (URL)        |
+| `wiki.sprite(sha256)`                            | `Uint8Array` (PNG)    |
 
 ```ts
 const axe = await client.wiki.get("axes", "hellforged axe");
+const demon = await client.wiki.creature("demon");
 ```
 
-`wiki.houses` lists the houses published from the game client, which are not the auctions of
-`houses.list`. A house that left the client throws `GoneError`; a renamed one has its new slug in
-`replacedBy`.
+`wiki.creatures`, `wiki.spells` and `wiki.achievements` come from TibiaWiki BR; they are not the
+tibia.com lists of `library`.
+
+`wiki.houses` lists the Tibia houses, which are not the auctions of `houses.list`. A house that left
+the game throws `GoneError`; a renamed one has its new slug in `replacedBy`.
 
 ```ts
 import { writeFile } from "node:fs/promises";
@@ -235,27 +250,50 @@ const png = await client.wiki.houseFloor("thais-clanhall", 7);
 await writeFile("floor-7.png", png);
 ```
 
+`wiki.rawItems`, `wiki.rawItemsByIds` and `wiki.rawItem` return Tibia items by id in the game: flags
+and sprites, without weight, attack, loot or price (those are in `wiki.get`). They need an `apiKey`
+(`AuthenticationError` with `code: "token_required"` without one) and count against the plan quota.
+A search returns 100 items per page; a batch takes up to 100 ids and lists the missing ones in
+`not_found`. Every answer carries the attribution to CipSoft.
+
+```ts
+const client = new Umanthir({ apiKey: process.env.UMANTHIR_API_KEY });
+const { items } = await client.wiki.rawItemsByIds([3031, 3035]);
+const coin = await client.wiki.rawItem(3031);
+```
+
+Images need no token and do not count against the quota. `wiki.itemImageUrl(id)` only builds the
+URL of an item's preview image, for an `<img src>`; `wiki.sprite(sha256)` downloads one sprite, such
+as an item `preview`.
+
+```ts
+img.src = client.wiki.itemImageUrl(3031);
+if (coin.item.preview) {
+  const png = await client.wiki.sprite(coin.item.preview);
+}
+```
+
 ## Errors
 
 Every error thrown by the SDK extends `UmanthirError`. Errors from the API extend `APIError`, which
 carries `status`, `apiMessage` (the API's `error.message`), `method`, `url`, `headers`, `body`,
 `retryAfter` (seconds) and `apiVersion`.
 
-| Class                     | When                                                                                                     |
-| ------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `ValidationError`         | An argument was rejected before sending the request (bad name, page, level, ...).                        |
-| `ConnectionError`         | The API could not be reached (DNS, TLS, connection reset, offline).                                      |
-| `TimeoutError`            | An attempt took longer than `timeout` (extends `ConnectionError`).                                       |
-| `AbortError`              | The request was cancelled through your `signal`.                                                         |
-| `BadRequestError`         | 400: the API rejected an argument (`Unknown vocation.`, `Invalid page.`, ...).                           |
-| `AuthenticationError`     | 401: the `apiKey` is malformed, unknown, revoked or expired.                                             |
-| `ForbiddenError`          | 403: a site key used from another origin (`code: "origin_not_allowed"`).                                 |
-| `NotFoundError`           | 404: character, guild, world, house, item or route not found.                                            |
-| `GoneError`               | 410: the house left the client; `reason`, and `replacedBy` when renamed.                                 |
-| `RateLimitError`          | 429: limit exceeded; `reason`, and `rateLimit` holds `{ limit, remaining, reset }`.                      |
-| `UpstreamError`           | 502 or 520: the API could not read tibia.com.                                                            |
-| `ServiceUnavailableError` | 503; `reason` is `"maintenance"`, `"busy"`, `"wiki_unavailable"`, `"houses_unavailable"` or `"unknown"`. |
-| `APIError`                | Any other error status.                                                                                  |
+| Class                     | When                                                                                                                            |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `ValidationError`         | An argument was rejected before sending the request (bad name, page, level, ...).                                               |
+| `ConnectionError`         | The API could not be reached (DNS, TLS, connection reset, offline).                                                             |
+| `TimeoutError`            | An attempt took longer than `timeout` (extends `ConnectionError`).                                                              |
+| `AbortError`              | The request was cancelled through your `signal`.                                                                                |
+| `BadRequestError`         | 400: the API rejected an argument (`Unknown vocation.`, `Invalid page.`, ...).                                                  |
+| `AuthenticationError`     | 401: the `apiKey` is malformed, unknown, revoked or expired.                                                                    |
+| `ForbiddenError`          | 403: a site key used from another origin (`code: "origin_not_allowed"`).                                                        |
+| `NotFoundError`           | 404: character, guild, world, house, item or route not found.                                                                   |
+| `GoneError`               | 410: the house left the game; `reason`, and `replacedBy` when renamed.                                                          |
+| `RateLimitError`          | 429: limit exceeded; `reason`, and `rateLimit` holds `{ limit, remaining, reset }`.                                             |
+| `UpstreamError`           | 502 or 520: the API could not read tibia.com.                                                                                   |
+| `ServiceUnavailableError` | 503; `reason` is `"maintenance"`, `"busy"`, `"wiki_unavailable"`, `"houses_unavailable"`, `"items_unavailable"` or `"unknown"`. |
+| `APIError`                | Any other error status.                                                                                                         |
 
 ```ts
 import { RateLimitError, ServiceUnavailableError } from "@umanthir/sdk";
@@ -342,7 +380,7 @@ const client = new Umanthir({
 const client = new Umanthir({ debug: true });
 await client.characters.get("Njorn");
 // [umanthir] → GET https://api.umanthir.com/v2/community/characters/Njorn (attempt 1)
-// [umanthir] ← 200 GET https://api.umanthir.com/v2/community/characters/Njorn 182ms X-API-Version=2.7.0 RateLimit-Remaining=59
+// [umanthir] ← 200 GET https://api.umanthir.com/v2/community/characters/Njorn 182ms X-API-Version=2.8.0 RateLimit-Remaining=59
 ```
 
 In Node.js, `UMANTHIR_LOG=debug node app.js` enables it without code changes. Credentials are always
@@ -411,6 +449,7 @@ const filters: HighscoreListOptions = { vocation: "sorcerers", category: "magicl
 
 | SDK          | Umanthir API        |
 | ------------ | ------------------- |
+| 1.2.0        | v2 (contract 2.8.0) |
 | 1.1.0        | v2 (contract 2.7.0) |
 | 1.0.0        | v2 (contract 2.4.2) |
 | 0.1.0-beta.1 | v2 (contract 2.4.2) |

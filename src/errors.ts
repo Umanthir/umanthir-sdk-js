@@ -157,9 +157,10 @@ export type ServiceUnavailableReason =
   | "busy"
   | "wiki_unavailable"
   | "unknown"
-  | "houses_unavailable";
+  | "houses_unavailable"
+  | "items_unavailable";
 
-/** 503: tibia.com maintenance, upstream protection or wiki data unavailable. */
+/** 503: tibia.com maintenance, upstream protection, or wiki, houses or items data unavailable. */
 export class ServiceUnavailableError extends APIError {
   public override readonly name: string = "ServiceUnavailableError";
   public readonly reason: ServiceUnavailableReason;
@@ -191,6 +192,7 @@ function unavailableReason(message: string): ServiceUnavailableReason {
   if (m.includes("busy")) return "busy";
   if (m.includes("wiki")) return "wiki_unavailable";
   if (m.includes("houses")) return "houses_unavailable";
+  if (m.includes("items")) return "items_unavailable";
   return "unknown";
 }
 
