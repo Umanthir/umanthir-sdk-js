@@ -40,6 +40,26 @@ describe("live: Umanthir API", () => {
     expect([...png.slice(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47]);
   });
 
+  it("wiki creatures, NPCs, spells and achievements return the wiki data", async () => {
+    expect((await client.wiki.creature("demon")).name.toLowerCase()).toBe("demon");
+    expect((await client.wiki.spell("exura")).name).toBeTruthy();
+    expect((await client.wiki.npc("rashid")).name.toLowerCase()).toBe("rashid");
+    expect((await client.wiki.achievement("ashes to dust")).name.toLowerCase()).toBe(
+      "ashes to dust",
+    );
+  });
+
+  it("wiki.itemImageUrl leads to a PNG", async () => {
+    const res = await fetch(client.wiki.itemImageUrl(3031), {
+      signal: AbortSignal.timeout(30_000),
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toMatch(/^image\/png/);
+    expect([...new Uint8Array(await res.arrayBuffer()).slice(0, 4)]).toEqual([
+      0x89, 0x50, 0x4e, 0x47,
+    ]);
+  });
+
   it("the API major version is the supported one", () => {
     expect(warnings.filter((w) => w.code === "API_VERSION_MISMATCH")).toEqual([]);
     expect(SUPPORTED_API_MAJOR).toBe(2);

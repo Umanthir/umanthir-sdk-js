@@ -7,6 +7,7 @@ import type {
   Character,
   CharacterInfo,
   ClientHouseList,
+  ClientItem,
   CreatureListOptions,
   Creatures,
   Death,
@@ -16,18 +17,29 @@ import type {
   HighscoreCategory,
   HighscorePage,
   HuntSplit,
+  ItemBatch,
+  ItemSearch,
   MapList,
   Online,
   OnlineBatch,
   RashidLocation,
+  RawItemSearchOptions,
   ServerSave,
   ShareExperience,
   SpellList,
   Umanthir,
   VocationStatus,
+  WikiAchievement,
+  WikiAchievementList,
   WikiCategoryList,
+  WikiCreature,
+  WikiCreatureList,
   WikiItem,
   WikiItemList,
+  WikiNPC,
+  WikiNPCList,
+  WikiSpell,
+  WikiSpellList,
   WorldQuestList,
 } from "../../src/index.js";
 
@@ -194,5 +206,31 @@ describe("contract 2.7.0", () => {
       Promise<ClientHouseList>
     >();
     expectTypeOf<ReturnType<Umanthir["wiki"]["houseFloor"]>>().toEqualTypeOf<Promise<Uint8Array>>();
+  });
+});
+
+describe("contract 2.8.0", () => {
+  type Wiki = Umanthir["wiki"];
+
+  it("the new methods have their result types", () => {
+    expectTypeOf<ReturnType<Wiki["rawItems"]>>().toEqualTypeOf<Promise<ItemSearch>>();
+    expectTypeOf<ReturnType<Wiki["rawItemsByIds"]>>().toEqualTypeOf<Promise<ItemBatch>>();
+    expectTypeOf<ReturnType<Wiki["rawItem"]>>().toEqualTypeOf<Promise<ClientItem>>();
+    expectTypeOf<ReturnType<Wiki["itemImageUrl"]>>().toEqualTypeOf<string>();
+    expectTypeOf<ReturnType<Wiki["sprite"]>>().toEqualTypeOf<Promise<Uint8Array>>();
+    expectTypeOf<ReturnType<Wiki["creatures"]>>().toEqualTypeOf<Promise<WikiCreatureList>>();
+    expectTypeOf<ReturnType<Wiki["creature"]>>().toEqualTypeOf<Promise<WikiCreature>>();
+    expectTypeOf<ReturnType<Wiki["npcs"]>>().toEqualTypeOf<Promise<WikiNPCList>>();
+    expectTypeOf<ReturnType<Wiki["npc"]>>().toEqualTypeOf<Promise<WikiNPC>>();
+    expectTypeOf<ReturnType<Wiki["spells"]>>().toEqualTypeOf<Promise<WikiSpellList>>();
+    expectTypeOf<ReturnType<Wiki["spell"]>>().toEqualTypeOf<Promise<WikiSpell>>();
+    expectTypeOf<ReturnType<Wiki["achievements"]>>().toEqualTypeOf<Promise<WikiAchievementList>>();
+    expectTypeOf<ReturnType<Wiki["achievement"]>>().toEqualTypeOf<Promise<WikiAchievement>>();
+  });
+
+  it("rawItemsByIds takes numbers and the search filters are optional", () => {
+    expectTypeOf<Parameters<Wiki["rawItemsByIds"]>[0]>().toEqualTypeOf<readonly number[]>();
+    expectTypeOf<{ page: 2 }>().toExtend<RawItemSearchOptions>();
+    expectTypeOf<{ named: "true" }>().not.toExtend<RawItemSearchOptions>();
   });
 });

@@ -947,6 +947,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/wiki/achievements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Achievements of the wiki
+         * @description Basic data of every TibiaWiki BR achievement, by name: the ones that can no longer be obtained
+         *     (`obtainable` false) and the ones removed from the game (`removed`, the version they left in) too, so a
+         *     client can filter them. Fields without a value are left out. Achievements have no picture. Not to be
+         *     confused with `/v2/library/achievements`, which comes from tibia.com. `Cache-Control` lasts 5 minutes.
+         */
+        get: operations["getWikiAchievements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/wiki/achievements/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One achievement, with how to get it
+         * @description One achievement by name, without case (`ashes to dust` works). The name has no `(Achievement)`,
+         *     which the wiki adds to the page title. `achievement_id` is the id in the game. `description` is the game
+         *     text and `spoiler` how to get it, from the spoiler block of the wiki's description. `status` stays in
+         *     Portuguese, as on the wiki. Every other field of the infobox stays in `attributes`, as the wiki wrote it.
+         *     `Cache-Control` lasts 5 minutes.
+         */
+        get: operations["getWikiAchievement"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/wiki/categories": {
         parameters: {
             query?: never;
@@ -970,6 +1017,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/wiki/creatures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Creatures of the wiki
+         * @description Basic data of every TibiaWiki BR creature, by name. Texts such as `class`, `difficulty` and
+         *     `occurrence` stay in Portuguese, as on the wiki. Fields without a value are left out. Two pages with
+         *     the same name both appear; the detail route picks one. Not to be confused with `/v2/library/creatures`,
+         *     which comes from tibia.com. `Cache-Control` lasts 5 minutes.
+         */
+        get: operations["getWikiCreatures"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/wiki/creatures/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One creature, with its loot
+         * @description One creature by name, without case (`demon` works). Known fields of the infobox come with
+         *     English names and types: `damage_modifiers` (percent of damage taken, by element, from the wiki's
+         *     `*dmgmod` fields), `abilities` (the wiki's `hab_*` texts, by English key), `immunities`,
+         *     `ignores_fields`, `sounds`, `summon_mana`, `convince_mana`. `loot` comes in infobox order, with
+         *     `rarity` in English: common, uncommon, semi_rare, rare, very_rare, event, raid. Every other field,
+         *     and a value the API cannot read, stays in `attributes` as the wiki wrote it, in Portuguese. When two
+         *     pages share the name, the page titled with the name wins. `Cache-Control` lasts 5 minutes.
+         */
+        get: operations["getWikiCreature"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/wiki/houses": {
         parameters: {
             query?: never;
@@ -979,10 +1075,9 @@ export interface paths {
         };
         /**
          * Tibia houses with their floor plans
-         * @description Every house of the Tibia client that the Umanthir portal published, with links to the assembly
+         * @description Every Tibia house that Umanthir published, with links to the assembly
          *     JSON and to one transparent PNG per floor (floor 7 is the surface; lower numbers are above it, higher
-         *     ones underground). Data comes from the Tibia client, extracted by the TibiaDataLeech and published by
-         *     an Admin; a new house shows up within a minute of the publication, with no change to the API. Only
+         *     ones underground). A new house shows up within a minute of the publication, with no change to the API. Only
          *     active houses are listed. `Cache-Control` lasts 1 minute.
          */
         get: operations["getWikiHouses"];
@@ -1003,11 +1098,10 @@ export interface paths {
         };
         /**
          * Assembly JSON of one house
-         * @description The house JSON as the portal published it (format `umanthir.house.v1`, the same as the export of
-         *     the portal Editor): `house` (id, name, town, rent, size, beds, guildhall, entrance), `box`, `assembly`
+         * @description The house JSON (format `umanthir.house.v1`): `house` (id, name, town, rent, size, beds, guildhall, entrance), `box`, `assembly`
          *     (how to draw each sprite on the floor PNGs) and `floors`, with each square and its objects from the
          *     bottom up, and `draws` with the rectangle of each sprite in the PNG. `ETag` is the sha256 of the
-         *     published file. A house removed or renamed in the client is 410, with `reason` and, when renamed,
+         *     published file. A house removed or renamed in the game is 410, with `reason` and, when renamed,
          *     `replaced_by`. `Cache-Control` lasts 5 minutes.
          */
         get: operations["getWikiHouse"];
@@ -1028,12 +1122,134 @@ export interface paths {
         };
         /**
          * Plan of one floor, as a transparent PNG
-         * @description The PNG of floor `{z}`, drawn as in the portal Editor, with a transparent background. Pixel (0, 0)
+         * @description The PNG of floor `{z}`, with a transparent background. Pixel (0, 0)
          *     is the `image_origin` square of the assembly JSON; each square is 32 px. To see a floor over the one
          *     below it, draw the lower one 32 px to the right and 32 px down. `ETag` is the sha256 of the published
          *     file. `Cache-Control` lasts 1 hour.
          */
         get: operations["getWikiHouseFloor"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/wiki/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tibia items: batch by id or search
+         * @description Needs a token (401 `token_required` without one); counts against the plan quota.
+         *
+         *     Tibia items by their id in the game.
+         *     Not to be confused with `/v2/wiki/{category}`, the TibiaWiki BR items by name. These records have no
+         *     weight, attack, defense, loot or price, and many items have no name.
+         *
+         *     With `ids`, returns up to 100 full records, in the order asked, without repeats; ids with no item go to
+         *     `not_found`. Without `ids`, searches the active items, by id, 100 per page. `ids` does not mix with
+         *     the search filters (400 `invalid_field`). Every answer carries the attribution to CipSoft. `Cache-Control`
+         *     lasts 5 minutes for the batch and 1 minute for the search.
+         */
+        get: operations["getWikiClientItems"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/wiki/items/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One Tibia item
+         * @description Needs a token (401 `token_required` without one); counts against the plan quota.
+         *
+         *     The item record (format `umanthir.api-items-data.v1`): `flags`, `frame_groups` with the sprites in the
+         *     order of `sprite_ids` and `preview`, the first sprite. A sprite is `sprite_base_url` + sha256 + `.png`.
+         *     An item that left the game stays with
+         *     `active: false` and `disabled_reason: removed` (200). The id is checked before any read.
+         *     `Cache-Control` lasts 5 minutes.
+         */
+        get: operations["getWikiClientItem"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/wiki/items/{id}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Redirects to the preview sprite of the item
+         * @description 302 to `/v2/wiki/sprites/{sha256}.png`, the first sprite of the item. The redirect lasts 1 hour
+         *     (`Cache-Control`) and is not immutable: a new game version may change the preview. An item with no
+         *     sprite, removed or unknown is 404 `image_not_found`. It has the per-IP image limit and does not count
+         *     against the token quota.
+         */
+        get: operations["getWikiClientItemImage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/wiki/npcs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * NPCs of the wiki
+         * @description Basic data of every TibiaWiki BR NPC, by name. `job` and `city` stay in Portuguese, as on the
+         *     wiki. Fields without a value are left out. `Cache-Control` lasts 5 minutes.
+         */
+        get: operations["getWikiNPCs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/wiki/npcs/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One NPC, with what it buys and sells
+         * @description One NPC by name, without case. `buys` are the items the NPC buys from players and `sells`
+         *     the items it sells, by item name. A null `price` means the NPC uses the item's own value. `jobs` has
+         *     every job of the infobox, the main one first. Every other field stays in `attributes`, as the wiki
+         *     wrote it. `Cache-Control` lasts 5 minutes.
+         */
+        get: operations["getWikiNPC"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1058,6 +1274,72 @@ export interface paths {
          *     TibiaWiki BR. `Cache-Control` lasts until the next server save.
          */
         get: operations["getRashidLocation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/wiki/spells": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Spells of the wiki
+         * @description Basic data of every TibiaWiki BR spell, by name. `type` and `element` stay in Portuguese, as
+         *     on the wiki. Fields without a value are left out. Not to be confused with `/v2/library/spells`, which
+         *     comes from tibia.com. `Cache-Control` lasts 5 minutes.
+         */
+        get: operations["getWikiSpells"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/wiki/spells/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One spell, with everything the wiki says
+         * @description One spell by name, without case. `cooldown` and `group_cooldown` are in seconds, `range` in
+         *     squares. Every other field of the infobox stays in `attributes`, as the wiki wrote it.
+         *     `Cache-Control` lasts 5 minutes.
+         */
+        get: operations["getWikiSpell"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/wiki/sprites/{sha256}.png": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One Tibia sprite, as PNG
+         * @description The PNG whose sha256 is `{sha256}`. The name is the content: the file never changes, hence
+         *     `Cache-Control: public, max-age=31536000, immutable`. `ETag` is the sha256. The image routes have their
+         *     own per-IP limit (`RateLimit-*`), do not look at the token and do not count against the quota.
+         */
+        get: operations["getWikiSprite"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1163,6 +1445,53 @@ export interface components {
             /** Format: date-time */
             published_at: string;
         };
+        ClientItem: {
+            /**
+             * @description Attribution of the data and sprites to CipSoft.
+             * @example Tibia client data and sprites © CipSoft GmbH. Tibia is a trademark of CipSoft GmbH.
+             */
+            attribution: string;
+            /**
+             * @description Game version of the data.
+             * @example 2026-11-15_236047932e27
+             */
+            client_version: string;
+            item: components["schemas"]["ClientItemRecord"];
+            /** Format: date-time */
+            published_at: string;
+            /**
+             * Format: uri
+             * @description Prefix of a sprite: append the sha256 and `.png`.
+             * @example https://api.umanthir.com/v2/wiki/sprites/
+             */
+            sprite_base_url: string;
+        };
+        /** @description The item record (`umanthir.api-items-data.v1`). New fields may appear. */
+        ClientItemRecord: {
+            active: boolean;
+            /** @example 2026-11-15_236047932e27 */
+            client_version: string;
+            description?: string | null;
+            /** Format: date-time */
+            disabled_at?: string | null;
+            /** @example removed */
+            disabled_reason: string | null;
+            flags: {
+                [key: string]: unknown;
+            };
+            frame_groups: {
+                [key: string]: unknown;
+            }[];
+            /** @example 140 */
+            id: number;
+            /** @example parcel */
+            name: string | null;
+            preview: string | null;
+            /** Format: date-time */
+            updated_at: string;
+        } & {
+            [key: string]: unknown;
+        };
         ClosedPoll: {
             /** Format: date */
             ended_on: string;
@@ -1247,7 +1576,7 @@ export interface components {
         };
         Error: {
             error: {
-                /** @description Stable machine code; only on some errors (origin_not_allowed). */
+                /** @description Stable machine code; only on some errors (origin_not_allowed, invalid_field, item_not_found, image_not_found, sprite_not_found, token_required, token_unverified). */
                 code?: string;
                 message: string;
                 status_code: number;
@@ -1482,7 +1811,7 @@ export interface components {
             type: "house" | "guildhall";
             world: string;
         };
-        /** @description Error of a house that left the client. */
+        /** @description Error of a house that left the game. */
         HouseGone: {
             error: {
                 /** @example House renamed. */
@@ -1618,6 +1947,75 @@ export interface components {
             from: string;
             text: string;
             to: string;
+        };
+        /** @description Several items by id. */
+        ItemBatch: {
+            /**
+             * @description Attribution of the data and sprites to CipSoft.
+             * @example Tibia client data and sprites © CipSoft GmbH. Tibia is a trademark of CipSoft GmbH.
+             */
+            attribution: string;
+            /**
+             * @description Game version of the data.
+             * @example 2026-11-15_236047932e27
+             */
+            client_version: string;
+            /** @example 2 */
+            count: number;
+            items: components["schemas"]["ClientItemRecord"][];
+            /** @description Ids asked with no item. */
+            not_found: number[];
+            /** Format: date-time */
+            published_at: string;
+            /**
+             * Format: uri
+             * @description Prefix of a sprite: append the sha256 and `.png`.
+             * @example https://api.umanthir.com/v2/wiki/sprites/
+             */
+            sprite_base_url: string;
+        };
+        /** @description One page of the search. */
+        ItemSearch: {
+            /**
+             * @description Attribution of the data and sprites to CipSoft.
+             * @example Tibia client data and sprites © CipSoft GmbH. Tibia is a trademark of CipSoft GmbH.
+             */
+            attribution: string;
+            /**
+             * @description Game version of the data.
+             * @example 2026-11-15_236047932e27
+             */
+            client_version: string;
+            items: {
+                active: boolean;
+                /**
+                 * @description Market category or null.
+                 * @example gold
+                 */
+                category: string | null;
+                /** @example 3031 */
+                id: number;
+                /** @example gold coin */
+                name: string | null;
+                /** @description sha256 of the first sprite or null. */
+                preview: string | null;
+            }[];
+            /** @example 1 */
+            page: number;
+            /** @example 100 */
+            per_page: number;
+            /** Format: date-time */
+            published_at: string;
+            /**
+             * Format: uri
+             * @description Prefix of a sprite: append the sha256 and `.png`.
+             * @example https://api.umanthir.com/v2/wiki/sprites/
+             */
+            sprite_base_url: string;
+            /** @example 2 */
+            total: number;
+            /** @example 1 */
+            total_pages: number;
         };
         KillCount: {
             /** @description Creatures of the race killed by players. */
@@ -1929,6 +2327,59 @@ export interface components {
             /** @example Knight */
             vocation: string;
         };
+        /** @description Everything the wiki says about an achievement: known fields in English, the rest in attributes. */
+        WikiAchievement: {
+            /** @description Id of the achievement in the game. */
+            achievement_id: number | null;
+            /** @description Other infobox fields, with the original keys and texts. */
+            attributes: {
+                [key: string]: string;
+            };
+            /** @description Game text. */
+            description: string | null;
+            /** @description Grade, 1 to 4. */
+            grade: number | null;
+            implemented: string | null;
+            name: string;
+            notes: string | null;
+            obtainable: boolean | null;
+            points: number | null;
+            premium: boolean | null;
+            /** @description Version the achievement left the game in, as the wiki writes it; null while it is in the game. */
+            removed: string | null;
+            rookgaard: boolean | null;
+            secret: boolean | null;
+            /** @description How to get the achievement (spoiler). */
+            spoiler: string | null;
+            /** @description Text of TibiaWiki BR, in Portuguese. */
+            status: string | null;
+            title: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: uri */
+            wiki_url: string;
+        };
+        /** @description Every achievement of the wiki. */
+        WikiAchievementList: {
+            achievements: components["schemas"]["WikiAchievementSummary"][];
+            count: number;
+        };
+        /** @description Basic data of an achievement. */
+        WikiAchievementSummary: {
+            /** @description Id of the achievement in the game. */
+            achievement_id?: number;
+            /** @description Grade, 1 to 4. */
+            grade?: number;
+            name: string;
+            obtainable?: boolean;
+            points?: number;
+            premium?: boolean;
+            /** @description Version the achievement left the game in, as the wiki writes it; null while it is in the game. */
+            removed?: string;
+            secret?: boolean;
+            /** Format: uri */
+            wiki_url: string;
+        };
         /** @description An item category, with its slug, English name and group. */
         WikiCategory: {
             /** @enum {string} */
@@ -1946,6 +2397,84 @@ export interface components {
         WikiCategoryList: {
             categories: components["schemas"]["WikiCategoryCount"][];
             total: number;
+        };
+        /** @description Everything the wiki says about a creature: known fields in English, the rest in attributes. */
+        WikiCreature: {
+            /** @description What the creature does, by English key, as the wiki wrote it. */
+            abilities: {
+                [key: string]: string;
+            };
+            /** @description Other infobox fields, with the original keys and texts. */
+            attributes: {
+                [key: string]: string;
+            };
+            behavior: string | null;
+            charm_points: number | null;
+            /** @description Text of TibiaWiki BR, in Portuguese. */
+            class: string | null;
+            convince_mana: number | null;
+            /** @description Percent of damage taken, by element (100 is normal, 0 is immune). */
+            damage_modifiers: {
+                [key: string]: number;
+            };
+            defense: number | null;
+            /** @description Text of TibiaWiki BR, in Portuguese. */
+            difficulty: string | null;
+            /** Format: int64 */
+            experience: number | null;
+            hp: number | null;
+            ignores_fields: string[];
+            illusionable: boolean | null;
+            /** Format: uri */
+            image_url: string | null;
+            immunities: string[];
+            implemented: string | null;
+            is_boss: boolean | null;
+            loot: components["schemas"]["WikiLoot"][];
+            max_damage: number | null;
+            /** Format: double */
+            mitigation: number | null;
+            name: string;
+            notes: string | null;
+            /** @description Text of TibiaWiki BR, in Portuguese. */
+            occurrence: string | null;
+            pushable: boolean | null;
+            pushes_objects: boolean | null;
+            sounds: string[];
+            speed: number | null;
+            subtype: string | null;
+            summon_mana: number | null;
+            title: string;
+            /** @description Text of TibiaWiki BR, in Portuguese. */
+            type: string | null;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: uri */
+            wiki_url: string;
+        };
+        /** @description Every creature of the wiki. */
+        WikiCreatureList: {
+            count: number;
+            creatures: components["schemas"]["WikiCreatureSummary"][];
+        };
+        /** @description Basic data of a creature. */
+        WikiCreatureSummary: {
+            charm_points?: number;
+            /** @description Text of TibiaWiki BR, in Portuguese. */
+            class?: string;
+            /** @description Text of TibiaWiki BR, in Portuguese. */
+            difficulty?: string;
+            /** Format: int64 */
+            experience?: number;
+            hp?: number;
+            /** Format: uri */
+            image_url: string | null;
+            is_boss?: boolean;
+            name: string;
+            /** @description Text of TibiaWiki BR, in Portuguese. */
+            occurrence?: string;
+            /** Format: uri */
+            wiki_url: string;
         };
         /** @description Everything the wiki says about an item: known fields in English, the rest in attributes. */
         WikiItem: {
@@ -2023,12 +2552,65 @@ export interface components {
             /** Format: uri */
             wiki_url: string;
         };
+        /** @description An item the creature drops. Quantities are null when the wiki does not say them. */
+        WikiLoot: {
+            item: string;
+            max_qty: number | null;
+            min_qty: number | null;
+            /**
+             * @description Rarity in English. A rarity the API does not know goes out as the wiki wrote it.
+             * @example very_rare
+             */
+            rarity: string;
+        };
         /** @description A skill boost or a resistance (value in percent). */
         WikiNamedValue: {
             /** @example Magic Level */
             name: string;
             /** @example 2 */
             value: number;
+        };
+        /** @description Everything the wiki says about an NPC, with what it buys and sells. */
+        WikiNPC: {
+            /** @description Other infobox fields, with the original keys and texts. */
+            attributes: {
+                [key: string]: string;
+            };
+            buys: components["schemas"]["WikiTrade"][];
+            city: string | null;
+            class: string | null;
+            /** Format: uri */
+            image_url: string | null;
+            implemented: string | null;
+            /** @description Text of TibiaWiki BR, in Portuguese. */
+            job: string | null;
+            jobs: string[];
+            location: string | null;
+            name: string;
+            notes: string | null;
+            sells: components["schemas"]["WikiTrade"][];
+            subarea: string | null;
+            title: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: uri */
+            wiki_url: string;
+        };
+        /** @description Every NPC of the wiki. */
+        WikiNPCList: {
+            count: number;
+            npcs: components["schemas"]["WikiNPCSummary"][];
+        };
+        /** @description Basic data of an NPC. */
+        WikiNPCSummary: {
+            city?: string;
+            /** Format: uri */
+            image_url: string | null;
+            /** @description Text of TibiaWiki BR, in Portuguese. */
+            job?: string;
+            name: string;
+            /** Format: uri */
+            wiki_url: string;
         };
         /** @description How a rune is made and used (Infobox Runas). */
         WikiRune: {
@@ -2039,6 +2621,68 @@ export interface components {
             mana: number | null;
             soul: number | null;
             words: string | null;
+        };
+        /** @description Everything the wiki says about a spell: known fields in English, the rest in attributes. */
+        WikiSpell: {
+            /** @description Other infobox fields, with the original keys and texts. */
+            attributes: {
+                [key: string]: string;
+            };
+            base_power: number | null;
+            cooldown: number | null;
+            /** @description Text of TibiaWiki BR, in Portuguese. */
+            element: string | null;
+            group_cooldown: number | null;
+            /** Format: uri */
+            image_url: string | null;
+            implemented: string | null;
+            level: number | null;
+            mana: number | null;
+            name: string;
+            notes: string | null;
+            premium: boolean | null;
+            range: number | null;
+            title: string;
+            /** @description Text of TibiaWiki BR, in Portuguese. */
+            type: string | null;
+            /** Format: date-time */
+            updated_at: string;
+            vocations: string[];
+            /** Format: uri */
+            wiki_url: string;
+            words: string | null;
+        };
+        /** @description Every spell of the wiki. */
+        WikiSpellList: {
+            count: number;
+            spells: components["schemas"]["WikiSpellSummary"][];
+        };
+        /** @description Basic data of a spell. */
+        WikiSpellSummary: {
+            /** @description Text of TibiaWiki BR, in Portuguese. */
+            element?: string;
+            /** Format: uri */
+            image_url: string | null;
+            level?: number;
+            mana?: number;
+            name: string;
+            premium?: boolean;
+            /** @description Text of TibiaWiki BR, in Portuguese. */
+            type?: string;
+            vocations?: string[];
+            /** Format: uri */
+            wiki_url: string;
+            words?: string;
+        };
+        /** @description An item an NPC buys or sells. */
+        WikiTrade: {
+            item: string;
+            note?: string;
+            /**
+             * Format: int64
+             * @description Price in gold. Null when the NPC uses the item's own value.
+             */
+            price: number | null;
         };
         WorldDetail: {
             battleye_status?: {
@@ -2259,7 +2903,7 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
-        /** @description The house left the Tibia client: `reason` is `removed`, or `renamed` with the new slug in `replaced_by`. */
+        /** @description The house left the game: `reason` is `removed`, or `renamed` with the new slug in `replaced_by`. */
         HouseGone: {
             headers: {
                 "X-API-Version": components["headers"]["XApiVersion"];
@@ -2336,6 +2980,87 @@ export interface components {
                  *       "error": {
                  *         "status_code": 503,
                  *         "message": "Houses data unavailable."
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Item with no record (`item_not_found`), without an image (`image_not_found`) or a sprite the bucket does not have (`sprite_not_found`). */
+        ItemNotFound: {
+            headers: {
+                "X-API-Version": components["headers"]["XApiVersion"];
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "error": {
+                 *         "status_code": 404,
+                 *         "code": "item_not_found",
+                 *         "message": "Item not found."
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description `invalid_field`: invalid id, ids, filter or sprite. */
+        ItemsBadRequest: {
+            headers: {
+                "X-API-Version": components["headers"]["XApiVersion"];
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "error": {
+                 *         "status_code": 400,
+                 *         "code": "invalid_field",
+                 *         "message": "Invalid item id: use a number from 1 to 9999999."
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description No token (`token_required`) or an unknown, revoked or expired one (`invalid_token`, with `WWW-Authenticate`). The items data routes need a token. */
+        ItemsUnauthorized: {
+            headers: {
+                "WWW-Authenticate"?: string;
+                "X-API-Version": components["headers"]["XApiVersion"];
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "error": {
+                 *         "status_code": 401,
+                 *         "code": "token_required",
+                 *         "message": "This route needs a token."
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /**
+         * @description The items bucket is not configured or not answering and there is no good index yet, or a file
+         *     does not match the index. `Retry-After` suggests when to try again.
+         *     Also when the portal is off or down and the token was not validated yet (`code: token_unverified`): without a validated token the route never answers as anonymous.
+         */
+        ItemsUnavailable: {
+            headers: {
+                "Retry-After"?: number;
+                "X-API-Version": components["headers"]["XApiVersion"];
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "error": {
+                 *         "status_code": 503,
+                 *         "message": "Items data unavailable."
                  *       }
                  *     }
                  */
@@ -2522,6 +3247,8 @@ export interface components {
     parameters: {
         /** @description Character name. NBSP becomes a space. `/`, `\`, `?`, `#` and `&` respond 400. */
         CharacterName: string;
+        /** @description Item id in the game, from 1 to 9999999, no sign or leading zero. Any other value is 400 `invalid_field`. */
+        ClientItemID: number;
         /** @description Documentation language. Case-sensitive. Any other value responds 404. */
         DocsLanguage: "en" | "pt-BR";
         /** @description Guild name, case-insensitive. `/`, `\`, `?`, `#`, `&` and `%` respond 400. */
@@ -4718,6 +5445,116 @@ export interface operations {
             503: components["responses"]["WikiUnavailable"];
         };
     };
+    getWikiAchievements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every achievement. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "count": 2,
+                     *       "achievements": [
+                     *         {
+                     *           "name": "Allow Cookies?",
+                     *           "achievement_id": 60,
+                     *           "grade": 1,
+                     *           "points": 2,
+                     *           "secret": false,
+                     *           "premium": true,
+                     *           "obtainable": true,
+                     *           "wiki_url": "https://www.tibiawiki.com.br/wiki/Allow_Cookies%3F_(Achievement)"
+                     *         },
+                     *         {
+                     *           "name": "Ashes to Dust",
+                     *           "achievement_id": 194,
+                     *           "grade": 2,
+                     *           "points": 4,
+                     *           "secret": true,
+                     *           "premium": true,
+                     *           "obtainable": true,
+                     *           "wiki_url": "https://www.tibiawiki.com.br/wiki/Ashes_to_Dust_(Achievement)"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WikiAchievementList"];
+                };
+            };
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["WikiUnavailable"];
+        };
+    };
+    getWikiAchievement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Achievement name, without case. Over 200 characters is 400 `Invalid name.`. */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The achievement. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "name": "Ashes to Dust",
+                     *       "title": "Ashes to Dust (Achievement)",
+                     *       "achievement_id": 194,
+                     *       "grade": 2,
+                     *       "points": 4,
+                     *       "secret": true,
+                     *       "premium": true,
+                     *       "obtainable": true,
+                     *       "removed": null,
+                     *       "rookgaard": null,
+                     *       "status": "Conhecido",
+                     *       "description": "\"Estacar\" vampiros e demônios quase que se tornou sua profissão.",
+                     *       "spoiler": "Obtido usando, com sucesso, 500 vezes a sua Blessed Wooden Stake em Demons e/ou Vampires.",
+                     *       "implemented": "8.7",
+                     *       "notes": null,
+                     *       "attributes": {},
+                     *       "wiki_url": "https://www.tibiawiki.com.br/wiki/Ashes_to_Dust_(Achievement)",
+                     *       "updated_at": "2026-11-24T17:10:50Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WikiAchievement"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["WikiNotFound"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["WikiUnavailable"];
+        };
+    };
     getWikiCategories: {
         parameters: {
             query?: never;
@@ -4742,6 +5579,169 @@ export interface operations {
                     "application/json": components["schemas"]["WikiCategoryList"];
                 };
             };
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["WikiUnavailable"];
+        };
+    };
+    getWikiCreatures: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every creature. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "count": 1,
+                     *       "creatures": [
+                     *         {
+                     *           "name": "Demon",
+                     *           "class": "Demônios",
+                     *           "hp": 8200,
+                     *           "experience": 6000,
+                     *           "charm_points": 50,
+                     *           "difficulty": "difícil",
+                     *           "occurrence": "comum",
+                     *           "is_boss": false,
+                     *           "image_url": "https://www.tibiawiki.com.br/images/Demon.gif",
+                     *           "wiki_url": "https://www.tibiawiki.com.br/wiki/Demon"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WikiCreatureList"];
+                };
+            };
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["WikiUnavailable"];
+        };
+    };
+    getWikiCreature: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Creature name, without case. Over 200 characters is 400 `Invalid name.`. */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The creature. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "name": "Demon",
+                     *       "title": "Demon",
+                     *       "class": "Demônios",
+                     *       "type": null,
+                     *       "subtype": null,
+                     *       "hp": 8200,
+                     *       "experience": 6000,
+                     *       "speed": 128,
+                     *       "defense": 44,
+                     *       "mitigation": 2.76,
+                     *       "charm_points": 50,
+                     *       "is_boss": false,
+                     *       "difficulty": "difícil",
+                     *       "occurrence": "comum",
+                     *       "summon_mana": null,
+                     *       "convince_mana": null,
+                     *       "illusionable": false,
+                     *       "pushable": false,
+                     *       "pushes_objects": true,
+                     *       "max_damage": null,
+                     *       "damage_modifiers": {
+                     *         "physical": 75,
+                     *         "earth": 60,
+                     *         "fire": 0,
+                     *         "death": 80,
+                     *         "energy": 50,
+                     *         "holy": 112,
+                     *         "ice": 112,
+                     *         "heal": 100
+                     *       },
+                     *       "abilities": {
+                     *         "physical": "Corpo a corpo (0-450).",
+                     *         "energy": "Strike (200-250).",
+                     *         "healing": "Self-Healing (220-300).",
+                     *         "summons": "Fire Elemental (0-1)."
+                     *       },
+                     *       "immunities": [
+                     *         "Invisibility",
+                     *         "Paralysis"
+                     *       ],
+                     *       "ignores_fields": [
+                     *         "Fire",
+                     *         "Energy",
+                     *         "Poison"
+                     *       ],
+                     *       "behavior": "Combate corpo a corpo. Luta at\\u00e9 a morte.",
+                     *       "sounds": [
+                     *         "Your soul will be mine!",
+                     *         "MUHAHAHAHA!"
+                     *       ],
+                     *       "loot": [
+                     *         {
+                     *           "item": "Gold Coin",
+                     *           "rarity": "common",
+                     *           "min_qty": 0,
+                     *           "max_qty": 100
+                     *         },
+                     *         {
+                     *           "item": "Demon Horn",
+                     *           "rarity": "uncommon",
+                     *           "min_qty": null,
+                     *           "max_qty": null
+                     *         },
+                     *         {
+                     *           "item": "Magic Plate Armor",
+                     *           "rarity": "very_rare",
+                     *           "min_qty": null,
+                     *           "max_qty": null
+                     *         }
+                     *       ],
+                     *       "implemented": "4.0",
+                     *       "notes": null,
+                     *       "attributes": {
+                     *         "boss": "Orshabaal",
+                     *         "maxdmg": "1530 (1880~ com o Fire Elemental)."
+                     *       },
+                     *       "image_url": "https://www.tibiawiki.com.br/images/Demon.gif",
+                     *       "wiki_url": "https://www.tibiawiki.com.br/wiki/Demon",
+                     *       "updated_at": "2026-10-25T17:10:50Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WikiCreature"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["WikiNotFound"];
             429: components["responses"]["TooManyRequests"];
             503: components["responses"]["WikiUnavailable"];
         };
@@ -4864,6 +5864,240 @@ export interface operations {
             503: components["responses"]["HousesUnavailable"];
         };
     };
+    getWikiClientItems: {
+        parameters: {
+            query?: {
+                /** @description Market category (`market.category_name`), exact and case-insensitive. */
+                category?: string;
+                /** @description Up to 100 item ids, comma separated (`102,3031`). Each from 1 to 9999999, no leading zero. */
+                ids?: string;
+                /** @description Part of the name, case-insensitive. Up to 100 characters. */
+                name?: string;
+                /** @description `true` only items with a name, `false` only without one. */
+                named?: "true" | "false";
+                /** @description Search page, from 1 (up to 100000). A page past the end returns empty `items`. */
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The batch (`ItemBatch`) or one page of the search (`ItemSearch`). */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemBatch"] | components["schemas"]["ItemSearch"];
+                };
+            };
+            /** @description Not Modified. */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["ItemsBadRequest"];
+            401: components["responses"]["ItemsUnauthorized"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["ItemsUnavailable"];
+        };
+    };
+    getWikiClientItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Item id in the game, from 1 to 9999999, no sign or leading zero. Any other value is 400 `invalid_field`. */
+                id: components["parameters"]["ClientItemID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientItem"];
+                };
+            };
+            /** @description Not Modified. */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["ItemsBadRequest"];
+            401: components["responses"]["ItemsUnauthorized"];
+            404: components["responses"]["ItemNotFound"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["ItemsUnavailable"];
+        };
+    };
+    getWikiClientItemImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Item id in the game, from 1 to 9999999, no sign or leading zero. Any other value is 400 `invalid_field`. */
+                id: components["parameters"]["ClientItemID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The preview sprite. */
+            302: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    Location?: string;
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["ItemsBadRequest"];
+            404: components["responses"]["ItemNotFound"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["ItemsUnavailable"];
+        };
+    };
+    getWikiNPCs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every NPC. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "count": 1,
+                     *       "npcs": [
+                     *         {
+                     *           "name": "Sam",
+                     *           "job": "Comerciante de Armas",
+                     *           "city": "Thais",
+                     *           "image_url": "https://www.tibiawiki.com.br/images/Sam.gif",
+                     *           "wiki_url": "https://www.tibiawiki.com.br/wiki/Sam"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WikiNPCList"];
+                };
+            };
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["WikiUnavailable"];
+        };
+    };
+    getWikiNPC: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description NPC name, without case. Over 200 characters is 400 `Invalid name.`. */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The NPC. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "name": "Sam",
+                     *       "title": "Sam",
+                     *       "class": null,
+                     *       "job": "Comerciante de Armas",
+                     *       "jobs": [
+                     *         "Comerciante de Armas",
+                     *         "Comerciante de Armaduras"
+                     *       ],
+                     *       "city": "Thais",
+                     *       "subarea": "Thais City",
+                     *       "location": "Thais City (aqui).",
+                     *       "buys": [
+                     *         {
+                     *           "item": "Axe",
+                     *           "price": null
+                     *         },
+                     *         {
+                     *           "item": "Fire Sword",
+                     *           "price": 1000
+                     *         }
+                     *       ],
+                     *       "sells": [
+                     *         {
+                     *           "item": "Battle Axe",
+                     *           "price": 235
+                     *         }
+                     *       ],
+                     *       "implemented": "Pré-6.0",
+                     *       "notes": "Sam foi o primeiro NPC do Tibia.",
+                     *       "attributes": {
+                     *         "buysell": "sim"
+                     *       },
+                     *       "image_url": "https://www.tibiawiki.com.br/images/Sam.gif",
+                     *       "wiki_url": "https://www.tibiawiki.com.br/wiki/Sam",
+                     *       "updated_at": "2026-10-25T17:10:50Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WikiNPC"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["WikiNotFound"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["WikiUnavailable"];
+        };
+    };
     getRashidLocation: {
         parameters: {
             query?: never;
@@ -4889,6 +6123,155 @@ export interface operations {
                 };
             };
             429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getWikiSpells: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every spell. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "count": 1,
+                     *       "spells": [
+                     *         {
+                     *           "name": "Annihilation",
+                     *           "words": "exori gran ico",
+                     *           "type": "Ataque",
+                     *           "element": "Físico",
+                     *           "level": 110,
+                     *           "mana": 300,
+                     *           "premium": true,
+                     *           "vocations": [
+                     *             "Knights"
+                     *           ],
+                     *           "image_url": "https://www.tibiawiki.com.br/images/Annihilation.gif",
+                     *           "wiki_url": "https://www.tibiawiki.com.br/wiki/Annihilation"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WikiSpellList"];
+                };
+            };
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["WikiUnavailable"];
+        };
+    };
+    getWikiSpell: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Spell name, without case. Over 200 characters is 400 `Invalid name.`. */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The spell. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "name": "Annihilation",
+                     *       "title": "Annihilation",
+                     *       "words": "exori gran ico",
+                     *       "type": "Ataque",
+                     *       "element": "Físico",
+                     *       "level": 110,
+                     *       "mana": 300,
+                     *       "premium": true,
+                     *       "vocations": [
+                     *         "Knights"
+                     *       ],
+                     *       "cooldown": 30,
+                     *       "group_cooldown": 2,
+                     *       "base_power": 125,
+                     *       "range": 1,
+                     *       "implemented": "8.7",
+                     *       "notes": null,
+                     *       "attributes": {
+                     *         "scalewith": "Arma, Axe Fighting, Club Fighting, Sword Fighting"
+                     *       },
+                     *       "image_url": "https://www.tibiawiki.com.br/images/Annihilation.gif",
+                     *       "wiki_url": "https://www.tibiawiki.com.br/wiki/Annihilation",
+                     *       "updated_at": "2026-10-25T17:10:50Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WikiSpell"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["WikiNotFound"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["WikiUnavailable"];
+        };
+    };
+    getWikiSprite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description sha256 of the PNG in lower-case hex (64 digits). Any other value is 400 `invalid_field`. */
+                sha256: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The PNG. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
+                };
+            };
+            /** @description Not Modified. */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["ItemsBadRequest"];
+            404: components["responses"]["ItemNotFound"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["ItemsUnavailable"];
         };
     };
 }

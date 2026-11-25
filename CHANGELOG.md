@@ -7,6 +7,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- API contract 2.8.0.
+- `wiki.rawItems({ name, category, named, page })`, `wiki.rawItemsByIds(ids)` and
+  `wiki.rawItem(id)`: Tibia items by id in the game, with their flags and sprites. They need an
+  `apiKey`.
+- `wiki.itemImageUrl(id)`: the URL of the preview image of an item, for an `<img src>`, without a
+  request.
+- `wiki.sprite(sha256)`: one Tibia sprite as PNG bytes.
+- `wiki.creatures()`, `wiki.creature(name)`, `wiki.npcs()`, `wiki.npc(name)`, `wiki.spells()`,
+  `wiki.spell(name)`, `wiki.achievements()` and `wiki.achievement(name)`: TibiaWiki BR creatures,
+  NPCs, spells and achievements.
+- The `items_unavailable` reason of `ServiceUnavailableError`.
+
+### Changed
+
+- The docs of `wiki.houses` describe the houses as Tibia houses.
+
 ## [1.1.0] - 2026-11-08
 
 Covers the Umanthir API v2 contract 2.7.0 and adds a date formatter. Nothing is removed from the
@@ -18,8 +36,8 @@ public API.
   and AM/PM (`hh`) or a 24-hour clock (`HH`).
 - API contract 2.7.0.
 - `tools.serverSave(timeZone)`: the next server save in an IANA time zone and how long until it.
-- `wiki.houses()`, `wiki.house(slug)` and `wiki.houseFloor(slug, z)`: the houses published from the
-  game client, their assembly JSON and one transparent PNG per floor.
+- `wiki.houses()`, `wiki.house(slug)` and `wiki.houseFloor(slug, z)`: the Tibia houses, their
+  assembly JSON and one transparent PNG per floor.
 - `session` in the result of `tools.splitHunt`: hunt date, start time and duration.
 - `AuthenticationError` (401), `ForbiddenError` (403) and `GoneError` (410), also on the browser
   global.

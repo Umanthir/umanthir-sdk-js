@@ -107,6 +107,12 @@ export class CharactersResource extends Resource {
 export type ClientHouseList = components["schemas"]["ClientHouseList"];
 
 // @public (undocumented)
+export type ClientItem = components["schemas"]["ClientItem"];
+
+// @public (undocumented)
+export type ClientItemRecord = components["schemas"]["ClientItemRecord"];
+
+// @public (undocumented)
 export type ClosedPoll = components["schemas"]["ClosedPoll"];
 
 // @public (undocumented)
@@ -131,6 +137,7 @@ export interface components {
     // (undocumented)
     parameters: {
         CharacterName: string;
+        ClientItemID: number;
         DocsLanguage: "en" | "pt-BR";
         GuildName: string;
         HighscoreCategory: components["schemas"]["HighscoreCategory"];
@@ -243,6 +250,44 @@ export interface components {
             };
         };
         HousesUnavailable: {
+            headers: {
+                "Retry-After"?: number;
+                "X-API-Version": components["headers"]["XApiVersion"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        ItemNotFound: {
+            headers: {
+                "X-API-Version": components["headers"]["XApiVersion"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        ItemsBadRequest: {
+            headers: {
+                "X-API-Version": components["headers"]["XApiVersion"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        ItemsUnauthorized: {
+            headers: {
+                "WWW-Authenticate"?: string;
+                "X-API-Version": components["headers"]["XApiVersion"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        ItemsUnavailable: {
             headers: {
                 "Retry-After"?: number;
                 "X-API-Version": components["headers"]["XApiVersion"];
@@ -428,6 +473,32 @@ export interface components {
             count: number;
             houses: components["schemas"]["HouseSummary"][];
             published_at: string;
+        };
+        ClientItem: {
+            attribution: string;
+            client_version: string;
+            item: components["schemas"]["ClientItemRecord"];
+            published_at: string;
+            sprite_base_url: string;
+        };
+        ClientItemRecord: {
+            active: boolean;
+            client_version: string;
+            description?: string | null;
+            disabled_at?: string | null;
+            disabled_reason: string | null;
+            flags: {
+                [key: string]: unknown;
+            };
+            frame_groups: {
+                [key: string]: unknown;
+            }[];
+            id: number;
+            name: string | null;
+            preview: string | null;
+            updated_at: string;
+        } & {
+            [key: string]: unknown;
         };
         ClosedPoll: {
             ended_on: string;
@@ -730,6 +801,32 @@ export interface components {
             text: string;
             to: string;
         };
+        ItemBatch: {
+            attribution: string;
+            client_version: string;
+            count: number;
+            items: components["schemas"]["ClientItemRecord"][];
+            not_found: number[];
+            published_at: string;
+            sprite_base_url: string;
+        };
+        ItemSearch: {
+            attribution: string;
+            client_version: string;
+            items: {
+                active: boolean;
+                category: string | null;
+                id: number;
+                name: string | null;
+                preview: string | null;
+            }[];
+            page: number;
+            per_page: number;
+            published_at: string;
+            sprite_base_url: string;
+            total: number;
+            total_pages: number;
+        };
         KillCount: {
             killed_by_players: number;
             killed_players: number;
@@ -946,6 +1043,43 @@ export interface components {
             regeneration: components["schemas"]["VocationRegen"];
             vocation: string;
         };
+        WikiAchievement: {
+            achievement_id: number | null;
+            attributes: {
+                [key: string]: string;
+            };
+            description: string | null;
+            grade: number | null;
+            implemented: string | null;
+            name: string;
+            notes: string | null;
+            obtainable: boolean | null;
+            points: number | null;
+            premium: boolean | null;
+            removed: string | null;
+            rookgaard: boolean | null;
+            secret: boolean | null;
+            spoiler: string | null;
+            status: string | null;
+            title: string;
+            updated_at: string;
+            wiki_url: string;
+        };
+        WikiAchievementList: {
+            achievements: components["schemas"]["WikiAchievementSummary"][];
+            count: number;
+        };
+        WikiAchievementSummary: {
+            achievement_id?: number;
+            grade?: number;
+            name: string;
+            obtainable?: boolean;
+            points?: number;
+            premium?: boolean;
+            removed?: string;
+            secret?: boolean;
+            wiki_url: string;
+        };
         WikiCategory: {
             group: "weapons" | "equipment" | "consumables" | "tools" | "loot" | "decoration" | "other";
             name: string;
@@ -957,6 +1091,63 @@ export interface components {
         WikiCategoryList: {
             categories: components["schemas"]["WikiCategoryCount"][];
             total: number;
+        };
+        WikiCreature: {
+            abilities: {
+                [key: string]: string;
+            };
+            attributes: {
+                [key: string]: string;
+            };
+            behavior: string | null;
+            charm_points: number | null;
+            class: string | null;
+            convince_mana: number | null;
+            damage_modifiers: {
+                [key: string]: number;
+            };
+            defense: number | null;
+            difficulty: string | null;
+            experience: number | null;
+            hp: number | null;
+            ignores_fields: string[];
+            illusionable: boolean | null;
+            image_url: string | null;
+            immunities: string[];
+            implemented: string | null;
+            is_boss: boolean | null;
+            loot: components["schemas"]["WikiLoot"][];
+            max_damage: number | null;
+            mitigation: number | null;
+            name: string;
+            notes: string | null;
+            occurrence: string | null;
+            pushable: boolean | null;
+            pushes_objects: boolean | null;
+            sounds: string[];
+            speed: number | null;
+            subtype: string | null;
+            summon_mana: number | null;
+            title: string;
+            type: string | null;
+            updated_at: string;
+            wiki_url: string;
+        };
+        WikiCreatureList: {
+            count: number;
+            creatures: components["schemas"]["WikiCreatureSummary"][];
+        };
+        WikiCreatureSummary: {
+            charm_points?: number;
+            class?: string;
+            difficulty?: string;
+            experience?: number;
+            hp?: number;
+            image_url: string | null;
+            is_boss?: boolean;
+            name: string;
+            occurrence?: string;
+            wiki_url: string;
         };
         WikiItem: {
             armor: number | null;
@@ -1017,9 +1208,46 @@ export interface components {
             weight?: number;
             wiki_url: string;
         };
+        WikiLoot: {
+            item: string;
+            max_qty: number | null;
+            min_qty: number | null;
+            rarity: string;
+        };
         WikiNamedValue: {
             name: string;
             value: number;
+        };
+        WikiNPC: {
+            attributes: {
+                [key: string]: string;
+            };
+            buys: components["schemas"]["WikiTrade"][];
+            city: string | null;
+            class: string | null;
+            image_url: string | null;
+            implemented: string | null;
+            job: string | null;
+            jobs: string[];
+            location: string | null;
+            name: string;
+            notes: string | null;
+            sells: components["schemas"]["WikiTrade"][];
+            subarea: string | null;
+            title: string;
+            updated_at: string;
+            wiki_url: string;
+        };
+        WikiNPCList: {
+            count: number;
+            npcs: components["schemas"]["WikiNPCSummary"][];
+        };
+        WikiNPCSummary: {
+            city?: string;
+            image_url: string | null;
+            job?: string;
+            name: string;
+            wiki_url: string;
         };
         WikiRune: {
             charges: number | null;
@@ -1029,6 +1257,50 @@ export interface components {
             mana: number | null;
             soul: number | null;
             words: string | null;
+        };
+        WikiSpell: {
+            attributes: {
+                [key: string]: string;
+            };
+            base_power: number | null;
+            cooldown: number | null;
+            element: string | null;
+            group_cooldown: number | null;
+            image_url: string | null;
+            implemented: string | null;
+            level: number | null;
+            mana: number | null;
+            name: string;
+            notes: string | null;
+            premium: boolean | null;
+            range: number | null;
+            title: string;
+            type: string | null;
+            updated_at: string;
+            vocations: string[];
+            wiki_url: string;
+            words: string | null;
+        };
+        WikiSpellList: {
+            count: number;
+            spells: components["schemas"]["WikiSpellSummary"][];
+        };
+        WikiSpellSummary: {
+            element?: string;
+            image_url: string | null;
+            level?: number;
+            mana?: number;
+            name: string;
+            premium?: boolean;
+            type?: string;
+            vocations?: string[];
+            wiki_url: string;
+            words?: string;
+        };
+        WikiTrade: {
+            item: string;
+            note?: string;
+            price: number | null;
         };
         WorldDetail: {
             battleye_status?: {
@@ -1302,6 +1574,12 @@ export type HuntSplit = components["schemas"]["HuntSplit"];
 
 // @public (undocumented)
 export type HuntTransfer = components["schemas"]["HuntTransfer"];
+
+// @public (undocumented)
+export type ItemBatch = components["schemas"]["ItemBatch"];
+
+// @public (undocumented)
+export type ItemSearch = components["schemas"]["ItemSearch"];
 
 // @public (undocumented)
 export type KillCount = components["schemas"]["KillCount"];
@@ -2759,6 +3037,66 @@ export interface operations {
         };
     };
     // (undocumented)
+    getWikiAchievement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WikiAchievement"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["WikiNotFound"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["WikiUnavailable"];
+        };
+    };
+    // (undocumented)
+    getWikiAchievements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WikiAchievementList"];
+                };
+            };
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["WikiUnavailable"];
+        };
+    };
+    // (undocumented)
     getWikiCategories: {
         parameters: {
             query?: never;
@@ -2780,6 +3118,177 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WikiCategoryList"];
+                };
+            };
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["WikiUnavailable"];
+        };
+    };
+    // (undocumented)
+    getWikiClientItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ClientItemID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientItem"];
+                };
+            };
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["ItemsBadRequest"];
+            401: components["responses"]["ItemsUnauthorized"];
+            404: components["responses"]["ItemNotFound"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["ItemsUnavailable"];
+        };
+    };
+    // (undocumented)
+    getWikiClientItemImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ClientItemID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            302: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    Location?: string;
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["ItemsBadRequest"];
+            404: components["responses"]["ItemNotFound"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["ItemsUnavailable"];
+        };
+    };
+    // (undocumented)
+    getWikiClientItems: {
+        parameters: {
+            query?: {
+                category?: string;
+                ids?: string;
+                name?: string;
+                named?: "true" | "false";
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemBatch"] | components["schemas"]["ItemSearch"];
+                };
+            };
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["ItemsBadRequest"];
+            401: components["responses"]["ItemsUnauthorized"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["ItemsUnavailable"];
+        };
+    };
+    // (undocumented)
+    getWikiCreature: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WikiCreature"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["WikiNotFound"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["WikiUnavailable"];
+        };
+    };
+    // (undocumented)
+    getWikiCreatures: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WikiCreatureList"];
                 };
             };
             429: components["responses"]["TooManyRequests"];
@@ -2959,6 +3468,164 @@ export interface operations {
             404: components["responses"]["WikiNotFound"];
             429: components["responses"]["TooManyRequests"];
             503: components["responses"]["WikiUnavailable"];
+        };
+    };
+    // (undocumented)
+    getWikiNPC: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WikiNPC"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["WikiNotFound"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["WikiUnavailable"];
+        };
+    };
+    // (undocumented)
+    getWikiNPCs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WikiNPCList"];
+                };
+            };
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["WikiUnavailable"];
+        };
+    };
+    // (undocumented)
+    getWikiSpell: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WikiSpell"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["WikiNotFound"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["WikiUnavailable"];
+        };
+    };
+    // (undocumented)
+    getWikiSpells: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WikiSpellList"];
+                };
+            };
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["WikiUnavailable"];
+        };
+    };
+    // (undocumented)
+    getWikiSprite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sha256: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    ETag: components["headers"]["ETag"];
+                    "RateLimit-Limit": components["headers"]["RateLimitLimit"];
+                    "RateLimit-Remaining": components["headers"]["RateLimitRemaining"];
+                    "RateLimit-Reset": components["headers"]["RateLimitReset"];
+                    "X-API-Version": components["headers"]["XApiVersion"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
+                };
+            };
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["ItemsBadRequest"];
+            404: components["responses"]["ItemNotFound"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["ItemsUnavailable"];
         };
     };
     // (undocumented)
@@ -3144,6 +3811,14 @@ export interface RateLimitInfo {
 // @public
 export type RateLimitReason = "rate_limit" | "ip_limit" | "monthly_quota" | "daily_quota";
 
+// @public
+export interface RawItemSearchOptions {
+    category?: string | undefined;
+    name?: string | undefined;
+    named?: boolean | undefined;
+    page?: number | undefined;
+}
+
 // @public (undocumented)
 export type RawSkills = components["schemas"]["RawSkills"];
 
@@ -3185,6 +3860,8 @@ export abstract class Resource {
     protected call<T>(path: string, options: RequestOptions | undefined, query?: Readonly<Record<string, QueryValue>>): Promise<T>;
     // @internal
     protected deprecated(method: string, replacement: string): void;
+    // @internal
+    protected href(path: string): string;
     // Warning: (ae-forgotten-export) The symbol "TransportRequest" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "TransportResponse" needs to be exported by the entry point index.d.ts
     //
@@ -3232,7 +3909,7 @@ export class ServiceUnavailableError extends APIError {
 }
 
 // @public
-export type ServiceUnavailableReason = "maintenance" | "busy" | "wiki_unavailable" | "unknown" | "houses_unavailable";
+export type ServiceUnavailableReason = "maintenance" | "busy" | "wiki_unavailable" | "unknown" | "houses_unavailable" | "items_unavailable";
 
 // @public (undocumented)
 export type Share = components["schemas"]["Share"];
@@ -3361,6 +4038,15 @@ export type VocationStatus = components["schemas"]["VocationStatus"];
 export type WarningCode = "STALE_DATA" | "PARTIAL_FAILURE" | "RATE_LIMIT_LOW" | "RETRYING" | "API_VERSION_MISMATCH" | "DEPRECATED" | "API_KEY_IN_BROWSER" | "INSECURE_BASE_URL" | "HOOK_FAILED";
 
 // @public (undocumented)
+export type WikiAchievement = components["schemas"]["WikiAchievement"];
+
+// @public (undocumented)
+export type WikiAchievementList = components["schemas"]["WikiAchievementList"];
+
+// @public (undocumented)
+export type WikiAchievementSummary = components["schemas"]["WikiAchievementSummary"];
+
+// @public (undocumented)
 export type WikiCategory = components["schemas"]["WikiCategory"];
 
 // @public (undocumented)
@@ -3368,6 +4054,15 @@ export type WikiCategoryCount = components["schemas"]["WikiCategoryCount"];
 
 // @public (undocumented)
 export type WikiCategoryList = components["schemas"]["WikiCategoryList"];
+
+// @public (undocumented)
+export type WikiCreature = components["schemas"]["WikiCreature"];
+
+// @public (undocumented)
+export type WikiCreatureList = components["schemas"]["WikiCreatureList"];
+
+// @public (undocumented)
+export type WikiCreatureSummary = components["schemas"]["WikiCreatureSummary"];
 
 // @public
 export interface WikiHouseListOptions {
@@ -3385,21 +4080,58 @@ export type WikiItemList = components["schemas"]["WikiItemList"];
 export type WikiItemSummary = components["schemas"]["WikiItemSummary"];
 
 // @public (undocumented)
+export type WikiLoot = components["schemas"]["WikiLoot"];
+
+// @public (undocumented)
 export type WikiNamedValue = components["schemas"]["WikiNamedValue"];
+
+// @public (undocumented)
+export type WikiNPC = components["schemas"]["WikiNPC"];
+
+// @public (undocumented)
+export type WikiNPCList = components["schemas"]["WikiNPCList"];
+
+// @public (undocumented)
+export type WikiNPCSummary = components["schemas"]["WikiNPCSummary"];
 
 // @public
 export class WikiResource extends Resource {
+    achievement(name: string, options?: RequestOptions): Promise<WikiAchievement>;
+    achievements(options?: RequestOptions): Promise<WikiAchievementList>;
     categories(options?: RequestOptions): Promise<WikiCategoryList>;
+    creature(name: string, options?: RequestOptions): Promise<WikiCreature>;
+    creatures(options?: RequestOptions): Promise<WikiCreatureList>;
     get(category: string, name: string, options?: RequestOptions): Promise<WikiItem>;
     house(slug: string, options?: RequestOptions): Promise<HouseAssembly>;
     houseFloor(slug: string, z: number, options?: RequestOptions): Promise<Uint8Array>;
     houses(filters?: WikiHouseListOptions, options?: RequestOptions): Promise<ClientHouseList>;
+    itemImageUrl(id: number): string;
     list(category: string, options?: RequestOptions): Promise<WikiItemList>;
+    npc(name: string, options?: RequestOptions): Promise<WikiNPC>;
+    npcs(options?: RequestOptions): Promise<WikiNPCList>;
     rashidLocation(options?: RequestOptions): Promise<RashidLocation>;
+    rawItem(id: number, options?: RequestOptions): Promise<ClientItem>;
+    rawItems(filters?: RawItemSearchOptions, options?: RequestOptions): Promise<ItemSearch>;
+    rawItemsByIds(ids: readonly number[], options?: RequestOptions): Promise<ItemBatch>;
+    spell(name: string, options?: RequestOptions): Promise<WikiSpell>;
+    spells(options?: RequestOptions): Promise<WikiSpellList>;
+    sprite(sha256: string, options?: RequestOptions): Promise<Uint8Array>;
 }
 
 // @public (undocumented)
 export type WikiRune = components["schemas"]["WikiRune"];
+
+// @public (undocumented)
+export type WikiSpell = components["schemas"]["WikiSpell"];
+
+// @public (undocumented)
+export type WikiSpellList = components["schemas"]["WikiSpellList"];
+
+// @public (undocumented)
+export type WikiSpellSummary = components["schemas"]["WikiSpellSummary"];
+
+// @public (undocumented)
+export type WikiTrade = components["schemas"]["WikiTrade"];
 
 // @public (undocumented)
 export type WorldDetail = components["schemas"]["WorldDetail"];

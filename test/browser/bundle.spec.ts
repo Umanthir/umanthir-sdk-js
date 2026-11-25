@@ -159,3 +159,26 @@ test("splitHunt: text/plain POST without a CORS preflight", async ({ page }) => 
   expect(api.seen[0]?.method).toBe("POST");
   expect(String(api.seen[0]?.headers["content-type"])).toContain("text/plain");
 });
+
+test("wiki.sprite returns the PNG bytes and wiki.itemImageUrl needs no request", async ({
+  page,
+}) => {
+  const result = await page.evaluate(async (base) => {
+    // biome-ignore lint/suspicious/noExplicitAny: browser global
+    const U = (window as any).Umanthir;
+    const client = new U({ baseURL: base, logLevel: "off" });
+    const png: Uint8Array = await client.wiki.sprite("a".repeat(64));
+    return {
+      bytes: [...png],
+      isBytes: png instanceof Uint8Array,
+      imageUrl: client.wiki.itemImageUrl(3031),
+    };
+  }, api.origin);
+  expect(result).toEqual({
+    bytes: [0x89, 0x50, 0x4e, 0x47],
+    isBytes: true,
+    imageUrl: `${api.origin}/v2/wiki/items/3031/image`,
+  });
+  expect(api.seen.map((r) => r.path)).toEqual([`/v2/wiki/sprites/${"a".repeat(64)}.png`]);
+  expect(api.preflights).toEqual([]);
+});
