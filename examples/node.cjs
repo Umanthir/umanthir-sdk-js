@@ -6,4 +6,6 @@ const client = new Umanthir();
 client.worlds
   .list()
   .then((worlds) => console.log(worlds))
+  .then(() => client.wiki.npc("rashid"))
+  .then((npc) => console.log(npc.name, "buys", (npc.buys ?? []).length, "items"))
   .catch((error) => console.error(`${error.name}: ${error.message}`));

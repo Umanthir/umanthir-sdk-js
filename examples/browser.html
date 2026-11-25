@@ -13,6 +13,7 @@
   </head>
   <body>
     <pre id="out">Loading…</pre>
+    <p><img id="coin" alt="Gold coin" width="32" height="32" /> <span id="creature"></span></p>
     <script>
       const out = document.getElementById("out");
       const client = new Umanthir({ debug: true });
@@ -26,6 +27,13 @@
           if (error instanceof Umanthir.NotFoundError) out.textContent = "Character not found.";
           else out.textContent = `${error.name}: ${error.message}`;
         });
+
+      // Images need no token: the <img> follows the redirect to the sprite.
+      document.getElementById("coin").src = client.wiki.itemImageUrl(3031);
+
+      client.wiki.creature("demon").then((demon) => {
+        document.getElementById("creature").textContent = `${demon.name}: ${demon.hp} HP`;
+      });
     </script>
   </body>
 </html>

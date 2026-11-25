@@ -7,6 +7,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-25
+
+Covers the Umanthir API v2 contract 2.8.0: Tibia items and sprites, and the TibiaWiki BR creatures,
+NPCs, spells and achievements. Nothing is removed from the public API.
+
 ### Added
 
 - API contract 2.8.0.
@@ -24,6 +29,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - The docs of `wiki.houses` describe the houses as Tibia houses.
+- The examples for Node.js and the browser use the new wiki methods and item images.
+- README: drops the outdated pre-release notice and gives the current bundle size.
 
 ## [1.1.0] - 2026-11-08
 
@@ -96,7 +103,8 @@ First pre-release, published with the `next` dist-tag.
 - Wiki resources: `wiki.rashidLocation()`, `wiki.categories()`, `wiki.list(category)` and
   `wiki.get(category, name)`.
 
-[Unreleased]: https://github.com/Umanthir/umanthir-sdk-js/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/Umanthir/umanthir-sdk-js/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/Umanthir/umanthir-sdk-js/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Umanthir/umanthir-sdk-js/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Umanthir/umanthir-sdk-js/compare/v0.1.0-beta.1...v1.0.0
 [0.1.0-beta.1]: https://github.com/Umanthir/umanthir-sdk-js/releases/tag/v0.1.0-beta.1

@@ -2,10 +2,9 @@
 
 Official SDK for the [Umanthir API](https://api.umanthir.com), for Node.js and browsers.
 
-> **Status: pre-release.** The package is under active development and is not published to npm yet.
 - Every data route of the Umanthir API v2, with responses typed from the API contract
 - ESM, CommonJS and type declarations for Node.js and bundlers
-- Browser bundle `umanthir.min.js` (about 7 kB gzip) exposing the global `Umanthir`
+- Browser bundle `umanthir.min.js` (about 9 kB gzip) exposing the global `Umanthir`
 - Typed errors, warnings, timeouts, retries with `Retry-After`, cancellation and opt-in debug logs
 - Zero runtime dependencies
 
@@ -381,7 +380,7 @@ const client = new Umanthir({
 const client = new Umanthir({ debug: true });
 await client.characters.get("Njorn");
 // [umanthir] → GET https://api.umanthir.com/v2/community/characters/Njorn (attempt 1)
-// [umanthir] ← 200 GET https://api.umanthir.com/v2/community/characters/Njorn 182ms X-API-Version=2.7.0 RateLimit-Remaining=59
+// [umanthir] ← 200 GET https://api.umanthir.com/v2/community/characters/Njorn 182ms X-API-Version=2.8.0 RateLimit-Remaining=59
 ```
 
 In Node.js, `UMANTHIR_LOG=debug node app.js` enables it without code changes. Credentials are always
@@ -450,6 +449,7 @@ const filters: HighscoreListOptions = { vocation: "sorcerers", category: "magicl
 
 | SDK          | Umanthir API        |
 | ------------ | ------------------- |
+| 1.2.0        | v2 (contract 2.8.0) |
 | 1.1.0        | v2 (contract 2.7.0) |
 | 1.0.0        | v2 (contract 2.4.2) |
 | 0.1.0-beta.1 | v2 (contract 2.4.2) |
